@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
   type Connection,
@@ -17,25 +17,18 @@ import { Background, BackgroundVariant } from '@reactflow/background';
 import { Controls } from '@reactflow/controls';
 import { MiniMap } from '@reactflow/minimap';
 import { createActivityBlockData, type BlockData } from '../../types/blocks';
-import type { Activity } from '../../types/engine';
-import {
-  useBlockStore,
-  type ProcessNodeData,
-} from '../../stores/blockStore';
+import { edgeTypes } from './Edges';
+import { blockNodeTypes } from './Blocks';
+import { generateNodeId } from '../../utils/guid';
+import { createLogger } from '../../utils/logger';
+import { Activity } from '../../types/engine';
+import { validateConnection, createConnection, CONNECTION_STYLES } from '../../types/connections';
+import { useBlockStore, type ProcessNodeData } from '../../stores/blockStore';
 import { useHistoryStore } from '../../stores/historyStore';
 import { useSelectionStore } from '../../stores/selectionStore';
 import { useExecutionStore } from '../../stores/executionStore';
 import { useDebuggerStore } from '../../stores/debuggerStore';
 import { useDiagramStore } from '../../stores/diagramStore';
-import {
-  CONNECTION_STYLES,
-  createConnection,
-  validateConnection,
-} from '../../types/connections';
-import { edgeTypes } from './Edges';
-import { blockNodeTypes } from './Blocks';
-import { generateNodeId } from '../../utils/guid';
-import { createLogger } from '../../utils/logger';
 import CanvasToolbar from './CanvasToolbar';
 import CanvasContextMenu from './CanvasContextMenu';
 import QuickAddActivity from './QuickAddActivity';
@@ -60,9 +53,6 @@ interface QuickAddState {
 }
 
 const logger = createLogger('ProcessCanvas');
-
-const nodeTypes = { ...blockNodeTypes };
-const edgeTypesMemo = { ...edgeTypes };
 
 const ProcessCanvasInner: React.FC = () => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
@@ -521,8 +511,8 @@ const ProcessCanvasInner: React.FC = () => {
         onNodeDoubleClick={onNodeDoubleClick}
         onNodeContextMenu={onNodeContextMenu}
         onPaneContextMenu={onPaneContextMenu}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypesMemo}
+        nodeTypes={blockNodeTypes}
+        edgeTypes={edgeTypes}
         deleteKeyCode={['Backspace', 'Delete']}
         selectionOnDrag
         panOnDrag={[1, 2]}

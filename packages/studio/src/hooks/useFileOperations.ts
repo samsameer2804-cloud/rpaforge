@@ -8,7 +8,6 @@ import { useSelectionStore } from '../stores/selectionStore';
 import { useExecutionStore } from '../stores/executionStore';
 import { useFileStore } from '../stores/fileStore';
 import { useProjectFsStore } from '../stores/projectFsStore';
-import { useEngine } from '../hooks/useEngine';
 import {
   deserializeProject,
   serializeDiagram,
