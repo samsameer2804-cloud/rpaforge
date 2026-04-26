@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import datetime
 import logging
+import re
 import threading
 import time
 import traceback
@@ -182,6 +183,7 @@ class ExecutionContext:
 
         # Check if it's a valid Python identifier (potential variable)
         is_var = value.isidentifier()
+        
         if not is_var:
             # Check for attribute access (e.g., "obj.attr")
             if "." in value:
@@ -191,6 +193,7 @@ class ExecutionContext:
             elif "[" in value and "]" in value:
                 base = value.split("[")[0]
                 is_var = base.isidentifier()
+        
         return is_var
 
 
