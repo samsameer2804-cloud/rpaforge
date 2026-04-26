@@ -7,6 +7,7 @@ Request handlers for JSON-RPC methods.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import time
 from typing import TYPE_CHECKING, Any
 
@@ -157,15 +158,13 @@ class BridgeHandlers:
             return
 
         for bp_data in self._pending_breakpoints:
-            try:
+            with contextlib.suppress(Exception):
                 self._runner.add_breakpoint(
                     node_id=bp_data.get("nodeId", ""),
                     line=bp_data.get("line", 0),
                     condition=bp_data.get("condition"),
                     hit_condition=bp_data.get("hitCondition"),
                 )
-            except Exception:
-                pass
 
         self._pending_breakpoints.clear()
 
