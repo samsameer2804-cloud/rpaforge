@@ -116,7 +116,7 @@ class DiagramConverter:
                 activity = self._create_activity(node)
                 if activity:
                     task.activities.append(activity)
-                
+
                 # Continue to next nodes after activity
                 successors = graph.get(node_id, [])
                 for next_id, _ in reversed(successors):
