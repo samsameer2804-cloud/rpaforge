@@ -1,4 +1,5 @@
 import { type IpcMainInvokeEvent } from 'electron';
+import path from 'node:path';
 import Ajv from 'ajv';
 import { schemas } from '../src/types/ipc-schemas';
 
@@ -55,6 +56,16 @@ export function validateFilePath(value: unknown, paramName: string): void {
 
   if (value.includes('..')) {
     throw new Error(`Invalid IPC payload: ${paramName} contains invalid path traversal`);
+  }
+
+  const resolved = path.resolve(value);
+  const allowedRoots = [
+    path.resolve(process.cwd()),
+    path.resolve(process.env.HOME || process.env.USERPROFILE || ''),
+  ];
+  const isAllowed = allowedRoots.some((root) => resolved.startsWith(root));
+  if (!isAllowed) {
+    throw new Error(`Path traversal detected: ${value}`);
   }
 }
 

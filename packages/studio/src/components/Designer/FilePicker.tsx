@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { FiFolder, FiFile, FiSave } from 'react-icons/fi';
 import { createLogger } from '../../utils/logger';
 
@@ -30,12 +30,15 @@ const FilePicker: React.FC<FilePickerProps> = ({
   disabled = false,
   className = '',
 }) => {
+  const [isBrowsing, setIsBrowsing] = useState(false);
+
   const handleBrowse = useCallback(async () => {
     if (!window.rpaforge?.dialog) {
       logger.error('Dialog API not available');
       return;
     }
 
+    setIsBrowsing(true);
     try {
       if (mode === 'folder') {
         const result = await window.rpaforge.dialog.showOpenDialog({
@@ -68,6 +71,8 @@ const FilePicker: React.FC<FilePickerProps> = ({
       }
     } catch (error) {
       logger.error('Failed to open file dialog:', error);
+    } finally {
+      setIsBrowsing(false);
     }
   }, [mode, value, filters, onChange]);
 
@@ -87,11 +92,18 @@ const FilePicker: React.FC<FilePickerProps> = ({
       <button
         type="button"
         onClick={handleBrowse}
-        disabled={disabled}
-        className="px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 disabled:opacity-50"
+        disabled={disabled || isBrowsing}
+        className={`px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 disabled:opacity-50 ${isBrowsing ? 'opacity-50 cursor-not-allowed' : ''}`}
         title={buttonTitle}
       >
-        <Icon className="w-4 h-4" />
+        {isBrowsing ? (
+          <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+          </svg>
+        ) : (
+          <Icon className="w-4 h-4" />
+        )}
       </button>
     </div>
   );

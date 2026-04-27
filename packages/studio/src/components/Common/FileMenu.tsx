@@ -416,7 +416,7 @@ const FileMenu: React.FC = () => {
         </button>
 
         <button
-          className="px-3 py-1.5 text-sm hover:bg-slate-700 rounded flex items-center gap-1"
+          className={`px-3 py-1.5 text-sm hover:bg-slate-700 rounded flex items-center gap-1 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
           onClick={handleOpenClick}
           disabled={isLoading}
           title="Open File"
@@ -426,7 +426,7 @@ const FileMenu: React.FC = () => {
         </button>
 
         <button
-          className="px-3 py-1.5 text-sm hover:bg-slate-700 rounded flex items-center gap-1"
+          className={`px-3 py-1.5 text-sm hover:bg-slate-700 rounded flex items-center gap-1 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
           onClick={handleOpenFolder}
           disabled={isLoading}
           title="Open Project Folder"
@@ -444,7 +444,7 @@ const FileMenu: React.FC = () => {
         />
 
         <button
-          className="px-3 py-1.5 text-sm hover:bg-slate-700 rounded flex items-center gap-1"
+          className={`px-3 py-1.5 text-sm hover:bg-slate-700 rounded flex items-center gap-1 ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
           onClick={handleSave}
           disabled={isSaving}
           title="Save Project"
@@ -455,7 +455,7 @@ const FileMenu: React.FC = () => {
 
         {!projectPath && (
           <button
-            className="px-3 py-1.5 text-sm hover:bg-slate-700 rounded flex items-center gap-1"
+            className={`px-3 py-1.5 text-sm hover:bg-slate-700 rounded flex items-center gap-1 ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
             onClick={handleSaveAs}
             disabled={isSaving}
             title="Save Project As"

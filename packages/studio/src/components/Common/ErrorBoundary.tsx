@@ -31,6 +31,9 @@ export class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     this.setState({ errorInfo });
 
+    console.error('[ErrorBoundary] Caught error:', error, errorInfo);
+    // TODO: integrate with telemetry/Sentry: reportError(error, errorInfo)
+
     if (process.env.NODE_ENV !== 'production') {
       logger.error('Caught an error', error);
       logger.error('Component stack', errorInfo.componentStack);

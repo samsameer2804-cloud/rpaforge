@@ -48,6 +48,37 @@ SAFE_BUILTINS = {
     "all": all,
 }
 
+# Read-only string/collection methods that are safe to call
+SAFE_METHODS = frozenset(
+    {
+        "upper",
+        "lower",
+        "strip",
+        "lstrip",
+        "rstrip",
+        "startswith",
+        "endswith",
+        "split",
+        "join",
+        "replace",
+        "format",
+        "keys",
+        "values",
+        "items",
+        "get",
+        "count",
+        "find",
+        "index",
+        "isdigit",
+        "isalpha",
+        "isalnum",
+        "isnumeric",
+        "isspace",
+        "title",
+        "capitalize",
+    }
+)
+
 
 class SafeEvaluator(ast.NodeVisitor):
     def __init__(self, variables: dict[str, Any]):
@@ -117,6 +148,49 @@ class SafeEvaluator(ast.NodeVisitor):
             return self.visit(node.body)
         else:
             return self.visit(node.orelse)
+
+    def visit_Attribute(self, node: ast.Attribute) -> Any:
+        # Only allow attribute access for method resolution via visit_Call.
+        # Direct attribute reads (e.g. ``obj.attr`` as a value) are not
+        # supported here — raise so that callers know to handle this via
+        # visit_Call instead.
+        raise ValueError(
+            f"Direct attribute access is not supported: {node.attr!r}. "
+            "Use a whitelisted method call instead."
+        )
+
+    def visit_Call(self, node: ast.Call) -> Any:
+        # Allow calls of the form  obj.method(...)  where method is in
+        # SAFE_METHODS.  Reject everything else (arbitrary callables,
+        # nested calls as the function, etc.).
+        if not isinstance(node.func, ast.Attribute):
+            # Allow calls to whitelisted builtins (e.g. len(x), str(x))
+            if isinstance(node.func, ast.Name) and node.func.id in SAFE_BUILTINS:
+                func = SAFE_BUILTINS[node.func.id]
+                eval_args = [self.visit(arg) for arg in node.args]
+                eval_kwargs = {kw.arg: self.visit(kw.value) for kw in node.keywords}
+                return func(*eval_args, **eval_kwargs)
+            raise ValueError(
+                f"Unsupported call target: {type(node.func).__name__}. "
+                "Only whitelisted method calls are allowed."
+            )
+
+        method_name = node.func.attr
+        if method_name not in SAFE_METHODS:
+            raise ValueError(
+                f"Method '{method_name}' is not in the safe-method whitelist."
+            )
+
+        obj = self.visit(node.func.value)
+        method = getattr(obj, method_name, None)
+        if method is None or not callable(method):
+            raise ValueError(
+                f"Object of type {type(obj).__name__!r} has no callable method '{method_name}'."
+            )
+
+        eval_args = [self.visit(arg) for arg in node.args]
+        eval_kwargs = {kw.arg: self.visit(kw.value) for kw in node.keywords}
+        return method(*eval_args, **eval_kwargs)
 
     def generic_visit(self, node: ast.AST) -> Any:
         raise ValueError(f"Unsupported expression: {type(node).__name__}")

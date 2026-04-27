@@ -98,19 +98,24 @@ class SubprocessExecutor:
             except RuntimeError:
                 ctx = multiprocessing.get_context("spawn")
 
-        with ctx.Pool(processes=1) as pool:
+        self._pool = ctx.Pool(processes=1)
+        try:
+            async_result = self._pool.apply_async(
+                self._execute_in_subprocess,
+                (library_path, activity_name, args, kwargs),
+            )
+
             try:
-                result = pool.apply_async(
-                    self._execute_in_subprocess,
-                    (library_path, activity_name, args, kwargs),
-                )
-
-                return result.get(timeout=timeout_seconds)
-
+                result = async_result.get(timeout=timeout_seconds)
             except multiprocessing.TimeoutError as err:
-                pool.terminate()
-                pool.join()
                 raise TimeoutError(timeout_ms) from err
+
+            return result
+        finally:
+            if self._pool is not None:
+                self._pool.terminate()
+                self._pool.join()
+                self._pool = None
 
     def close(self) -> None:
         """Close the executor and clean up resources."""
