@@ -45,33 +45,60 @@ class Credentials:
         self._env_vars_set: list[str] = []
         self._ensure_vault()
 
-    def _derive_key(self, password: str) -> bytes:
-        salt = b"rpaforge_vault_salt_v1"
+    def _derive_key(self, password: str, salt: bytes | None = None) -> tuple[bytes, bytes]:
+        """Derive encryption key from password using PBKDF2.
+
+        Returns (key, salt). Caller must persist the salt alongside the vault
+        to allow future decryption — never use a hardcoded salt.
+        """
+        if salt is None:
+            salt = os.urandom(32)
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,
             salt=salt,
-            iterations=100000,
+            iterations=600_000,
         )
-        return base64.urlsafe_b64encode(kdf.derive(password.encode()))
+        return base64.urlsafe_b64encode(kdf.derive(password.encode())), salt
 
-    def _get_or_create_key(self) -> Fernet:
-        if self._fernet:
-            return self._fernet
+    def _load_key_from_keystore(self) -> bytes | None:
+        try:
+            import keyring  # type: ignore[import]
+            stored = keyring.get_password("rpaforge_vault", str(self._vault_path))
+            if stored:
+                return stored.encode("ascii")
+        except Exception:
+            pass
+        return None
 
-        if not _CRYPTO_AVAILABLE:
-            return None
+    def _save_key_to_keystore(self, key: bytes) -> bool:
+        try:
+            import keyring  # type: ignore[import]
+            keyring.set_password("rpaforge_vault", str(self._vault_path), key.decode("ascii"))
+            return True
+        except Exception:
+            return False
 
+    def _load_or_generate_file_key(self) -> bytes:
         if VAULT_KEY_FILE.exists():
             with open(VAULT_KEY_FILE, "rb") as f:
                 key = f.read()
+            self._save_key_to_keystore(key)
         else:
             key = Fernet.generate_key()
             VAULT_KEY_FILE.parent.mkdir(parents=True, exist_ok=True)
-            with open(VAULT_KEY_FILE, "wb") as f:
-                f.write(key)
-            os.chmod(VAULT_KEY_FILE, 0o600)
+            if not self._save_key_to_keystore(key):
+                with open(VAULT_KEY_FILE, "wb") as f:
+                    f.write(key)
+                os.chmod(VAULT_KEY_FILE, 0o600)
+        return key
 
+    def _get_or_create_key(self) -> Fernet | None:
+        if self._fernet:
+            return self._fernet
+        if not _CRYPTO_AVAILABLE:
+            return None
+        key = self._load_key_from_keystore() or self._load_or_generate_file_key()
         self._fernet = Fernet(key)
         return self._fernet
 

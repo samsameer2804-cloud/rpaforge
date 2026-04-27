@@ -54,8 +54,11 @@ excel = [
 database = [
     "sqlalchemy>=2.0",
 ]
+keystore = [
+    "keyring>=24.0",
+]
 all = [
-    "rpaforge-libraries[desktop,web,ocr,excel,database]",
+    "rpaforge-libraries[desktop,web,ocr,excel,database,keystore]",
 ]
 dev = [
     "pytest>=7.0",
