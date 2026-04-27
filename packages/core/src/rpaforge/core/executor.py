@@ -97,6 +97,17 @@ class ThreadingTimeoutHandler:
             res = result_container[0] if has_result else None
 
         if timed_out:
+            # Python threads cannot be forcibly stopped; the thread continues
+            # running as a daemon until the process exits.  Use SubprocessExecutor
+            # (enabled automatically when psutil is installed) for true isolation
+            # and guaranteed enforcement of timeouts.
+            logger.warning(
+                "ThreadingTimeoutHandler: thread still alive after %dms — "
+                "resources held by the activity (windows, sockets, file handles) "
+                "will NOT be released until process exit.  Install psutil to "
+                "enable SubprocessExecutor, which enforces hard timeouts.",
+                timeout_ms,
+            )
             raise TimeoutError(timeout_ms)
         if exception_container:
             raise exception_container[0]

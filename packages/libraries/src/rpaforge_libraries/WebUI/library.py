@@ -38,16 +38,37 @@ class WebUI:
         self._screenshot_dir: str = "."
 
     def _ensure_playwright(self) -> None:
-        if self._playwright is None:
-            try:
-                from playwright.sync_api import sync_playwright
+        if self._playwright is not None:
+            return
+        try:
+            from playwright.sync_api import sync_playwright
+        except ImportError as err:
+            raise ImportError(
+                "playwright is required for WebUI library. "
+                "Install it with: pip install rpaforge-libraries[web] && playwright install"
+            ) from err
 
-                self._playwright = sync_playwright().start()
-            except ImportError as err:
-                raise ImportError(
-                    "playwright is required for WebUI library. "
-                    "Install it with: pip install rpaforge-libraries[web] && playwright install"
-                ) from err
+        import asyncio
+        import concurrent.futures
+
+        try:
+            asyncio.get_running_loop()
+            running_in_loop = True
+        except RuntimeError:
+            running_in_loop = False
+
+        if running_in_loop:
+            # sync_playwright creates its own event loop internally; calling it
+            # from within an already-running asyncio loop causes a conflict on
+            # some platforms.  Run it in a dedicated thread to get a clean loop.
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                self._playwright = pool.submit(lambda: sync_playwright().start()).result()
+        else:
+            self._playwright = sync_playwright().start()
+
+    def __del__(self) -> None:
+        with contextlib.suppress(Exception):
+            self.close_browser(all=True)
 
     @property
     def _page(self) -> Any:
