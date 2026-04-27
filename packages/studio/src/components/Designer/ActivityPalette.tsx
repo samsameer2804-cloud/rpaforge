@@ -237,17 +237,19 @@ const BlockCategorySection: React.FC<BlockCategorySectionProps> = ({
   return (
     <div className="category-section">
       <button
-        className="w-full flex items-center gap-2 px-2 py-1.5 text-sm font-medium hover:bg-slate-100 rounded"
+        className="w-full flex items-center gap-2 px-2 py-1.5 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800 rounded"
         style={{ color: colors.primary }}
         onClick={() => setIsExpanded(!isExpanded)}
+        aria-expanded={isExpanded}
+        aria-label={`${category.name}, ${filteredBlocks.length} blocks`}
       >
         {isExpanded ? (
-          <FiChevronDown className="w-4 h-4" />
+          <FiChevronDown className="w-4 h-4" aria-hidden="true" />
         ) : (
-          <FiChevronRight className="w-4 h-4" />
+          <FiChevronRight className="w-4 h-4" aria-hidden="true" />
         )}
-        <span>{category.icon} {category.name}</span>
-        <span className="ml-auto text-xs text-slate-400">{filteredBlocks.length}</span>
+        <span aria-hidden="true">{category.icon} {category.name}</span>
+        <span className="ml-auto text-xs text-slate-400" aria-hidden="true">{filteredBlocks.length}</span>
       </button>
       {isExpanded && (
         <div className="pl-2 pr-1">
@@ -297,20 +299,23 @@ const ActivityCategorySection: React.FC<ActivityCategorySectionProps> = ({
         className="w-full flex items-center gap-2 px-2 py-1.5 text-sm font-medium rounded transition-colors"
         style={{ color: style.color }}
         onClick={() => setIsExpanded(!isExpanded)}
+        aria-expanded={isExpanded}
+        aria-label={`${category.name}, ${filteredItems.length} activities`}
       >
         {isExpanded ? (
-          <FiChevronDown className="w-4 h-4" />
+          <FiChevronDown className="w-4 h-4" aria-hidden="true" />
         ) : (
-          <FiChevronRight className="w-4 h-4" />
+          <FiChevronRight className="w-4 h-4" aria-hidden="true" />
         )}
         <span
           className="p-1 rounded"
           style={{ backgroundColor: style.bgColor }}
+          aria-hidden="true"
         >
           {style.icon}
         </span>
-        <span>{category.name}</span>
-        <span className="ml-auto text-xs opacity-60">{filteredItems.length}</span>
+        <span aria-hidden="true">{category.name}</span>
+        <span className="ml-auto text-xs opacity-60" aria-hidden="true">{filteredItems.length}</span>
       </button>
       {isExpanded && (
         <div className="pl-2 pr-1">
@@ -343,6 +348,24 @@ const ActivityPalette: React.FC = () => {
     e.dataTransfer.effectAllowed = 'copy';
   };
 
+  const hasSearchResults = useMemo(() => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    const allBlocks = [...FLOW_CONTROL_BLOCKS, ...ERROR_HANDLING_BLOCKS, ...VARIABLE_BLOCKS];
+    const blockMatch = allBlocks.some(
+      (b) => b.name.toLowerCase().includes(q) || b.description?.toLowerCase().includes(q)
+    );
+    const activityMatch = categories.some((cat) =>
+      cat.items.some(
+        (item) =>
+          item.name.toLowerCase().includes(q) ||
+          item.description?.toLowerCase().includes(q) ||
+          getActivityDisplayLibrary(item as Activity).toLowerCase().includes(q)
+      )
+    );
+    return blockMatch || activityMatch;
+  }, [searchQuery, categories]);
+
   return (
     <div className="h-full flex flex-col">
       <div className="p-2 border-b border-slate-200 dark:border-slate-700">
@@ -351,8 +374,9 @@ const ActivityPalette: React.FC = () => {
           <FiSearch className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Search..."
-            className="w-full pl-8 pr-2 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Search blocks and activities..."
+            aria-label="Search blocks and activities"
+            className="w-full pl-8 pr-2 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100 dark:placeholder-slate-400"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -362,6 +386,30 @@ const ActivityPalette: React.FC = () => {
       <div className="flex-1 overflow-y-auto py-2">
         {isLoading && (
           <div className="px-3 pb-2 text-xs text-slate-500">Loading SDK activities…</div>
+        )}
+
+        {searchQuery && !hasSearchResults && (
+          <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+            <FiSearch className="w-8 h-8 text-slate-300 dark:text-slate-600 mb-2" aria-hidden="true" />
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              No results for <span className="font-medium">"{searchQuery}"</span>
+            </p>
+            <button
+              onClick={() => setSearchQuery('')}
+              className="mt-2 text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+            >
+              Clear search
+            </button>
+          </div>
+        )}
+
+        {!searchQuery && categories.length === 0 && !isLoading && (
+          <div className="px-4 py-8 text-center">
+            <p className="text-xs text-slate-400 dark:text-slate-500">SDK activities not loaded.</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+              Start the bridge to load activities.
+            </p>
+          </div>
         )}
 
         <div className="px-2 mb-1">

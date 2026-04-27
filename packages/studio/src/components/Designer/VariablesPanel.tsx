@@ -93,7 +93,13 @@ const VariablesPanel: React.FC<VariablesPanelProps> = ({ defaultExpanded = true 
   return (
     <div className="border-t border-slate-200 dark:border-slate-700">
       <div
+        role="button"
+        tabIndex={0}
         onClick={() => setIsExpanded(!isExpanded)}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsExpanded(!isExpanded); } }}
+        aria-expanded={isExpanded}
+        aria-controls="variables-panel-content"
+        aria-label={`Variables (${variables.length}), ${isExpanded ? 'collapse' : 'expand'}`}
         className="w-full flex items-center justify-between px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
       >
         <div className="flex items-center gap-2">
@@ -123,7 +129,7 @@ const VariablesPanel: React.FC<VariablesPanelProps> = ({ defaultExpanded = true 
       </div>
 
       {isExpanded && (
-        <div className="max-h-64 overflow-y-auto">
+        <div id="variables-panel-content" className="max-h-64 overflow-y-auto">
           {variables.length === 0 ? (
             <div className="px-3 py-4 text-center">
               <div className="text-xs text-slate-400 mb-2">No variables defined</div>

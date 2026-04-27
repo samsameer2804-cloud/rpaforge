@@ -17,7 +17,7 @@ import { useFileOperations } from '../../hooks/useFileOperations';
 import { useProjectFsStore } from '../../stores/projectFsStore';
 import { PROJECT_TEMPLATES, PROCESS_TEMPLATES } from '../../templates';
 
-const getTemplateIcon = (iconName: string) => {
+const getTemplateIcon = (iconName: string): React.ReactNode => {
   switch (iconName) {
     case 'FiFile':
       return <FiFile className="w-6 h-6" />;
@@ -57,8 +57,9 @@ const NewProjectDialog: React.FC<NewProjectDialogProps> = ({ isOpen, onClose, on
           <button
             className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-600 dark:text-slate-300"
             onClick={onClose}
+            aria-label="Close dialog"
           >
-            <FiX className="w-5 h-5" />
+            <FiX className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
 
@@ -162,8 +163,9 @@ const NewProcessDialog: React.FC<NewProcessDialogProps> = ({ isOpen, onClose, on
           <button
             className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-600 dark:text-slate-300"
             onClick={onClose}
+            aria-label="Close dialog"
           >
-            <FiX className="w-5 h-5" />
+            <FiX className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
 
@@ -255,8 +257,9 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({ isOpen, defaultName, onClos
           <button
             className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-600 dark:text-slate-300"
             onClick={onClose}
+            aria-label="Close dialog"
           >
-            <FiX className="w-5 h-5" />
+            <FiX className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
 
