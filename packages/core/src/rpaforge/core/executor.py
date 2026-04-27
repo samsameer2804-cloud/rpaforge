@@ -513,24 +513,36 @@ class ProcessExecutor:
             # This maintains backward compatibility
             result_container: list[Any] = []
             exception_container: list[Exception] = []
+            # Protect shared state between the spawned thread and this thread.
+            _thread_lock = threading.Lock()
 
             def run_in_thread() -> None:
                 try:
-                    result_container.append(method(*args, **kwargs))
+                    output = method(*args, **kwargs)
+                    with _thread_lock:
+                        result_container.append(output)
                 except Exception as e:
-                    exception_container.append(e)
+                    with _thread_lock:
+                        exception_container.append(e)
 
             thread = threading.Thread(target=run_in_thread, daemon=True)
             thread.start()
             thread.join(timeout=timeout_ms / 1000.0)
 
-            if thread.is_alive():
+            with _thread_lock:
+                timed_out = thread.is_alive()
+                has_exception = bool(exception_container)
+                exc = exception_container[0] if has_exception else None
+                has_result = bool(result_container)
+                res = result_container[0] if has_result else None
+
+            if timed_out:
                 raise TimeoutError(timeout_ms)
 
-            if exception_container:
-                raise exception_container[0]
+            if has_exception:
+                raise exc
 
-            return result_container[0] if result_container else None
+            return res
 
     def _notify(self, event_type: str, *args: Any) -> None:
         for listener in self._listeners:
