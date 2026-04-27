@@ -260,3 +260,79 @@ class Database:
             raise ValueError("Not connected to database")
         self._connection.rollback()
         logger.info("Transaction rolled back")
+
+    @activity(name="Bulk Insert", category="Database")
+    @tags("insert", "bulk", "table")
+    @output("Number of inserted rows")
+    def bulk_insert(self, table: str, rows: list[dict[str, Any]]) -> int:
+        """Insert multiple rows using a single batch statement.
+
+        :param table: Table name.
+        :param rows: List of dicts mapping column names to values.
+        :returns: Total number of inserted rows.
+        """
+        if not self._connection:
+            raise ValueError("Not connected to database")
+        if not rows:
+            return 0
+        columns = ", ".join(rows[0])
+        placeholders = ", ".join(f":{k}" for k in rows[0])
+        query = f"INSERT INTO {table} ({columns}) VALUES ({placeholders})"
+        _, text = self._sqlalchemy
+        result = self._connection.execute(text(query), rows)
+        self._connection.commit()
+        logger.info(f"Bulk-inserted {result.rowcount} rows into {table}")
+        return result.rowcount
+
+    @activity(name="Execute Many", category="Database")
+    @tags("query", "bulk")
+    @output("Number of affected rows")
+    def execute_many(self, query: str, params: list[dict[str, Any]]) -> int:
+        """Execute a parameterized statement once per item in params.
+
+        :param query: SQL statement with named placeholders.
+        :param params: List of parameter dicts.
+        :returns: Number of affected rows.
+        """
+        if not self._connection:
+            raise ValueError("Not connected to database")
+        if not params:
+            return 0
+        _, text = self._sqlalchemy
+        result = self._connection.execute(text(query), params)
+        self._connection.commit()
+        logger.info(f"execute_many affected {result.rowcount} rows")
+        return result.rowcount
+
+    @activity(name="Export To CSV", category="Database")
+    @tags("export", "csv")
+    @output("Path to exported file")
+    def export_to_csv(
+        self,
+        query: str,
+        path: str,
+        params: dict[str, Any] | None = None,
+        delimiter: str = ",",
+    ) -> str:
+        """Execute a SELECT query and write results to a CSV file.
+
+        :param query: SQL SELECT query.
+        :param path: Destination file path.
+        :param params: Optional query parameters.
+        :param delimiter: CSV field delimiter (default: comma).
+        :returns: Absolute path of the written file.
+        """
+        import csv
+        from pathlib import Path
+
+        rows = self.execute_query(query, params or {})
+        out = Path(path)
+        if not rows:
+            out.write_text("")
+            return str(out.resolve())
+        with out.open("w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()), delimiter=delimiter)
+            writer.writeheader()
+            writer.writerows(rows)
+        logger.info(f"Exported {len(rows)} rows to {path}")
+        return str(out.resolve())

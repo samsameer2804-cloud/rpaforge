@@ -432,6 +432,159 @@ class DesktopUI:
 
         return list(self._apps.keys())
 
+    @activity(name="Right Click Element", category="Desktop")
+    @tags("input", "mouse")
+    def right_click_element(
+        self, selector: str, timeout: str = "10s"
+    ) -> None:
+        """Right-click a UI element.
+
+        :param selector: Element selector.
+        :param timeout: Wait timeout.
+        """
+        element = self._find_element(selector, timeout)
+        element.right_click()
+        logger.info(f"Right-clicked element: {selector}")
+
+    @activity(name="Mouse Hover", category="Desktop")
+    @tags("input", "mouse")
+    def mouse_hover(
+        self, selector: str, timeout: str = "10s"
+    ) -> None:
+        """Move the mouse cursor over an element without clicking.
+
+        :param selector: Element selector.
+        :param timeout: Wait timeout.
+        """
+        element = self._find_element(selector, timeout)
+        element.move_mouse()
+        logger.info(f"Hovered over element: {selector}")
+
+    @activity(name="Drag And Drop", category="Desktop")
+    @tags("input", "mouse", "drag")
+    def drag_and_drop(
+        self,
+        source: str,
+        target: str,
+        timeout: str = "10s",
+    ) -> None:
+        """Drag a source element and drop it onto a target element.
+
+        :param source: Source element selector.
+        :param target: Target element selector.
+        :param timeout: Wait timeout for each element.
+        """
+        src = self._find_element(source, timeout)
+        dst = self._find_element(target, timeout)
+        src.drag_mouse_input(dst)
+        logger.info(f"Dragged '{source}' to '{target}'")
+
+    @activity(name="Scroll Element", category="Desktop")
+    @tags("input", "mouse", "scroll")
+    def scroll_element(
+        self,
+        selector: str,
+        direction: str = "down",
+        amount: int = 3,
+        timeout: str = "10s",
+    ) -> None:
+        """Scroll inside an element.
+
+        :param selector: Element selector.
+        :param direction: 'up' or 'down'.
+        :param amount: Number of scroll wheel clicks.
+        :param timeout: Wait timeout.
+        """
+        element = self._find_element(selector, timeout)
+        wheel_dist = -amount if direction.lower() == "up" else amount
+        element.scroll(wheel_dist=wheel_dist)
+        logger.info(f"Scrolled {direction} {amount} clicks on: {selector}")
+
+    @activity(name="Maximize Window", category="Desktop")
+    @tags("window", "maximize")
+    def maximize_window(self, window_id: str | None = None) -> None:
+        """Maximize the current or specified window.
+
+        :param window_id: Window ID (current window if None).
+        """
+        target_id = window_id or self._current_window_id
+        if not target_id or target_id not in self._windows:
+            raise ValueError("No window to maximize")
+        self._windows[target_id].maximize()
+        logger.info(f"Maximized window: {target_id}")
+
+    @activity(name="Minimize Window", category="Desktop")
+    @tags("window", "minimize")
+    def minimize_window(self, window_id: str | None = None) -> None:
+        """Minimize the current or specified window.
+
+        :param window_id: Window ID (current window if None).
+        """
+        target_id = window_id or self._current_window_id
+        if not target_id or target_id not in self._windows:
+            raise ValueError("No window to minimize")
+        self._windows[target_id].minimize()
+        logger.info(f"Minimized window: {target_id}")
+
+    @activity(name="Attach By PID", category="Desktop")
+    @tags("application", "attach")
+    @output("Application ID")
+    def attach_by_pid(
+        self, pid: int, app_id: str | None = None
+    ) -> str:
+        """Attach to a running application by its process ID.
+
+        :param pid: Process ID of the target application.
+        :param app_id: Optional ID to assign (auto-generated if None).
+        :returns: Application ID used to reference the app.
+        """
+        pywinauto = self._pywinauto
+        import uuid
+
+        instance_id = app_id or f"app_{uuid.uuid4().hex[:8]}"
+        app = pywinauto.Application(backend=self._backend).connect(process=pid)
+        self._apps[instance_id] = app
+        self._current_app_id = instance_id
+
+        window = app.top_window()
+        self._windows[instance_id] = window
+        self._current_window_id = instance_id
+
+        logger.info(f"Attached to PID {pid} as '{instance_id}'")
+        return instance_id
+
+    @activity(name="Wait Until Window Closed", category="Desktop")
+    @tags("window", "wait")
+    def wait_until_window_closed(
+        self,
+        title: str,
+        timeout: str = "30s",
+    ) -> None:
+        """Wait until a window with the given title disappears.
+
+        :param title: Window title (partial match).
+        :param timeout: Maximum wait time.
+        """
+        import time
+
+        timeout_secs = self._parse_timeout(timeout)
+        start = time.time()
+        while time.time() - start < timeout_secs:
+            if not self._current_app_id:
+                return
+            app = self._apps.get(self._current_app_id)
+            if app is None:
+                return
+            try:
+                win = app.window(title_re=f".*{title}.*")
+                if not win.exists():
+                    logger.info(f"Window '{title}' closed")
+                    return
+            except Exception:
+                return
+            time.sleep(0.5)
+        raise TimeoutError(f"Window '{title}' still open after {timeout}")
+
     @activity(name="Take Screenshot", category="Desktop")
     @tags("screenshot")
     @output("Filename of the saved screenshot")

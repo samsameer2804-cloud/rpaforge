@@ -245,3 +245,130 @@ class Excel:
             raise ValueError("No workbook open")
         ws = self._workbook[sheet] if sheet else self._workbook.active
         return ws.max_column
+
+    @activity(name="Insert Rows", category="Excel")
+    @tags("row", "insert")
+    def insert_rows(
+        self, row: int, count: int = 1, sheet: str | None = None
+    ) -> None:
+        """Insert blank rows above the given row number.
+
+        :param row: Row number to insert above (1-based).
+        :param count: Number of rows to insert.
+        :param sheet: Sheet name (active sheet if None).
+        """
+        if not self._workbook:
+            raise ValueError("No workbook open")
+        ws = self._workbook[sheet] if sheet else self._workbook.active
+        ws.insert_rows(row, amount=count)
+        logger.info(f"Inserted {count} row(s) above row {row}")
+
+    @activity(name="Delete Rows", category="Excel")
+    @tags("row", "delete")
+    def delete_rows(
+        self, row: int, count: int = 1, sheet: str | None = None
+    ) -> None:
+        """Delete rows starting from the given row number.
+
+        :param row: Starting row number (1-based).
+        :param count: Number of rows to delete.
+        :param sheet: Sheet name (active sheet if None).
+        """
+        if not self._workbook:
+            raise ValueError("No workbook open")
+        ws = self._workbook[sheet] if sheet else self._workbook.active
+        ws.delete_rows(row, amount=count)
+        logger.info(f"Deleted {count} row(s) starting at row {row}")
+
+    @activity(name="Insert Columns", category="Excel")
+    @tags("column", "insert")
+    def insert_columns(
+        self, col: int, count: int = 1, sheet: str | None = None
+    ) -> None:
+        """Insert blank columns to the left of the given column number.
+
+        :param col: Column number to insert before (1-based).
+        :param count: Number of columns to insert.
+        :param sheet: Sheet name (active sheet if None).
+        """
+        if not self._workbook:
+            raise ValueError("No workbook open")
+        ws = self._workbook[sheet] if sheet else self._workbook.active
+        ws.insert_cols(col, amount=count)
+        logger.info(f"Inserted {count} column(s) before column {col}")
+
+    @activity(name="Delete Columns", category="Excel")
+    @tags("column", "delete")
+    def delete_columns(
+        self, col: int, count: int = 1, sheet: str | None = None
+    ) -> None:
+        """Delete columns starting from the given column number.
+
+        :param col: Starting column number (1-based).
+        :param count: Number of columns to delete.
+        :param sheet: Sheet name (active sheet if None).
+        """
+        if not self._workbook:
+            raise ValueError("No workbook open")
+        ws = self._workbook[sheet] if sheet else self._workbook.active
+        ws.delete_cols(col, amount=count)
+        logger.info(f"Deleted {count} column(s) starting at column {col}")
+
+    @activity(name="Read Sheet To List", category="Excel")
+    @tags("read", "sheet", "list")
+    @output("List of row dicts keyed by header values")
+    def read_sheet_to_list(
+        self, sheet: str | None = None, header_row: int = 1
+    ) -> list[dict[str, Any]]:
+        """Read an entire sheet into a list of dicts using the header row as keys.
+
+        :param sheet: Sheet name (active sheet if None).
+        :param header_row: Row number containing column headers (1-based).
+        :returns: List of dicts, one per data row after the header.
+        """
+        if not self._workbook:
+            raise ValueError("No workbook open")
+        ws = self._workbook[sheet] if sheet else self._workbook.active
+        rows = list(ws.iter_rows(values_only=True))
+        if not rows:
+            return []
+        headers = [
+            str(h) if h is not None else f"col_{i}"
+            for i, h in enumerate(rows[header_row - 1])
+        ]
+        result = [dict(zip(headers, row, strict=False)) for row in rows[header_row:]]
+        logger.info(f"Read {len(result)} rows from sheet")
+        return result
+
+    @activity(name="Write List To Sheet", category="Excel")
+    @tags("write", "sheet", "list")
+    def write_list_to_sheet(
+        self,
+        data: list[dict[str, Any]],
+        sheet: str | None = None,
+        start_row: int = 1,
+        write_headers: bool = True,
+    ) -> None:
+        """Write a list of dicts to the sheet, optionally writing a header row.
+
+        :param data: List of dicts with identical keys.
+        :param sheet: Sheet name (active sheet if None).
+        :param start_row: Row to start writing (1-based).
+        :param write_headers: Write column headers as the first row.
+        """
+        if not self._workbook:
+            raise ValueError("No workbook open")
+        if not data:
+            return
+        ws = self._workbook[sheet] if sheet else self._workbook.active
+        headers = list(data[0].keys())
+        row_num = start_row
+        if write_headers:
+            for col_num, header in enumerate(headers, start=1):
+                ws.cell(row=row_num, column=col_num, value=header)
+            row_num += 1
+        for row_data in data:
+            for col_num, key in enumerate(headers, start=1):
+                ws.cell(row=row_num, column=col_num, value=row_data.get(key))
+            row_num += 1
+        logger.info(f"Wrote {len(data)} rows to sheet")
