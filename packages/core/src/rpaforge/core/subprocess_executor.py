@@ -8,8 +8,10 @@ for activity execution with timeout support.
 
 from __future__ import annotations
 
+import contextlib
 import multiprocessing
 import sys
+import threading
 from typing import Any
 
 
@@ -24,6 +26,7 @@ class SubprocessExecutor:
     def __init__(self, max_workers: int | None = None):
         self._max_workers = max_workers or multiprocessing.cpu_count()
         self._pool: multiprocessing.Pool | None = None
+        self._pool_lock = threading.Lock()
 
     def _execute_in_subprocess(
         self,
@@ -98,7 +101,13 @@ class SubprocessExecutor:
             except RuntimeError:
                 ctx = multiprocessing.get_context("spawn")
 
-        self._pool = ctx.Pool(processes=1)
+        with self._pool_lock:
+            if self._pool is not None:
+                self._pool.terminate()
+                self._pool.join()
+                self._pool = None
+            self._pool = ctx.Pool(processes=1)
+
         try:
             async_result = self._pool.apply_async(
                 self._execute_in_subprocess,
@@ -108,21 +117,37 @@ class SubprocessExecutor:
             try:
                 result = async_result.get(timeout=timeout_seconds)
             except multiprocessing.TimeoutError as err:
+                self._kill_child_processes()
                 raise TimeoutError(timeout_ms) from err
 
             return result
         finally:
+            with self._pool_lock:
+                if self._pool is not None:
+                    self._pool.terminate()
+                    self._pool.join()
+                    self._pool = None
+
+    def _kill_child_processes(self) -> None:
+        try:
+            import psutil
+            current = psutil.Process()
+            for child in current.children(recursive=True):
+                with contextlib.suppress(psutil.NoSuchProcess):
+                    child.kill()
+        except ImportError:
+            pass
+
+    def close(self) -> None:
+        """Close the executor and clean up resources."""
+        with self._pool_lock:
             if self._pool is not None:
                 self._pool.terminate()
                 self._pool.join()
                 self._pool = None
 
-    def close(self) -> None:
-        """Close the executor and clean up resources."""
-        if self._pool is not None:
-            self._pool.close()
-            self._pool.join()
-            self._pool = None
+    def __del__(self) -> None:
+        self.close()
 
     def __enter__(self) -> SubprocessExecutor:
         return self

@@ -25,8 +25,8 @@ export function validateIPCPayload(
 
   const validator = compiledSchemas.get(schemaName);
   if (!validator) {
-    console.warn(`No schema found for ${schemaName}, skipping validation`);
-    return;
+    console.error(`[IPC Security] No schema registered for channel "${schemaName}" — request blocked`);
+    throw new Error(`[IPC Security] No schema registered for channel "${schemaName}" — request blocked`);
   }
 
   if (!validator(payload)) {
@@ -54,18 +54,16 @@ export function validateFilePath(value: unknown, paramName: string): void {
     throw new Error(`Invalid IPC payload: ${paramName} contains invalid characters`);
   }
 
-  if (value.includes('..')) {
-    throw new Error(`Invalid IPC payload: ${paramName} contains invalid path traversal`);
+  const resolved = path.resolve(value);
+  const cwd = path.resolve(process.cwd());
+
+  if (!resolved.startsWith(cwd + path.sep) && resolved !== cwd) {
+    throw new Error(`Invalid IPC payload: ${paramName} is outside the allowed project directory`);
   }
 
-  const resolved = path.resolve(value);
-  const allowedRoots = [
-    path.resolve(process.cwd()),
-    path.resolve(process.env.HOME || process.env.USERPROFILE || ''),
-  ];
-  const isAllowed = allowedRoots.some((root) => resolved.startsWith(root));
-  if (!isAllowed) {
-    throw new Error(`Path traversal detected: ${value}`);
+  const blockedSegments = ['.ssh', '.aws', '.gnupg', '.rpaforge', '.config' + path.sep + 'gh'];
+  if (blockedSegments.some((seg) => resolved.includes(path.sep + seg + path.sep) || resolved.endsWith(path.sep + seg))) {
+    throw new Error(`Invalid IPC payload: ${paramName} accesses a restricted path`);
   }
 }
 

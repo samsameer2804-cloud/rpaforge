@@ -6,6 +6,7 @@ Data structures for process execution without Robot Framework.
 
 from __future__ import annotations
 
+import functools
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -243,33 +244,36 @@ class ExecutionContext:
         self.variables[name] = value
 
     def resolve_value(self, value: Any) -> Any:
-        if isinstance(value, str) and value and self._is_variable_reference(value):
-            return self.variables.get(value, value)
+        if not isinstance(value, str):
+            if isinstance(value, (list, tuple)):
+                return [self.resolve_value(v) for v in value]
+            if isinstance(value, dict):
+                return {k: self.resolve_value(v) for k, v in value.items()}
+            return value
 
-        if isinstance(value, (list, tuple)):
-            return [self.resolve_value(v) for v in value]
-        if isinstance(value, dict):
-            return {k: self.resolve_value(v) for k, v in value.items()}
+        if value and _is_variable_reference(value):
+            return self.variables.get(value, value)
         return value
 
-    def _is_variable_reference(self, value: str) -> bool:
-        if not value or not isinstance(value, str):
-            return False
 
-        if value.startswith(("'", '"', "/", "\\")) or ":" in value[:3]:
-            return False
+@functools.lru_cache(maxsize=256)
+def _is_variable_reference(value: str) -> bool:
+    if not value:
+        return False
 
-        if value.isdigit() or value in ("True", "False", "None"):
-            return False
+    if value.startswith(("'", '"', "/", "\\")) or ":" in value[:3]:
+        return False
 
-        is_var = value.isidentifier()
+    if value.isdigit() or value in ("True", "False", "None"):
+        return False
 
-        if not is_var:
-            if "." in value:
-                parts = value.split(".")
-                is_var = all(part.isidentifier() for part in parts)
-            elif "[" in value and "]" in value:
-                base = value.split("[")[0]
-                is_var = base.isidentifier()
+    if value.isidentifier():
+        return True
 
-        return is_var
+    if "." in value:
+        return all(part.isidentifier() for part in value.split("."))
+
+    if "[" in value and "]" in value:
+        return value.split("[")[0].isidentifier()
+
+    return False

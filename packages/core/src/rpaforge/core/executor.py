@@ -32,21 +32,7 @@ from rpaforge.core.interfaces import (
     LibraryProvider,
     TimeoutHandler,
 )
-
-# Import safe execution modules
-try:
-    from rpaforge.core.safe_evaluator import safe_eval
-except ImportError:
-    # Fallback to eval if safe_eval not available
-    def safe_eval(condition: str, variables: dict[str, Any]) -> bool:
-        """Fallback safe_eval that uses restricted eval."""
-        if not condition:
-            return False
-        try:
-            return bool(eval(condition, {"__builtins__": {}}, variables))
-        except Exception:
-            return False
-
+from rpaforge.core.safe_evaluator import safe_eval
 
 try:
     from rpaforge.core.subprocess_executor import SubprocessExecutor

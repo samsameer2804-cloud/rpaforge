@@ -210,35 +210,36 @@ class BridgeHandlers:
                 message="Missing required parameter: process or source",
             )
 
-        if self._process_task and not self._process_task.done():
-            raise JSONRPCError(
-                code=JSONRPCErrorCode.INVALID_PARAMS,
-                message="A process is already running or stopping",
+        async with self._lifecycle_lock:
+            if self._process_task and not self._process_task.done():
+                raise JSONRPCError(
+                    code=JSONRPCErrorCode.INVALID_PARAMS,
+                    message="A process is already running or stopping",
+                )
+
+            self._start_time = time.time()
+            self._process_id = f"process-{int(self._start_time * 1000)}"
+            self._cancel_requested = False
+            self._paused = False
+            self._terminal_event_emitted = False
+
+            self._emit(
+                ProcessStartedEvent(
+                    process_id=self._process_id,
+                    name=params.get("name", "Unnamed"),
+                ).to_dict()
             )
 
-        self._start_time = time.time()
-        self._process_id = f"process-{int(self._start_time * 1000)}"
-        self._cancel_requested = False
-        self._paused = False
-        self._terminal_event_emitted = False
+            self._emit(
+                LogEvent(
+                    level="info",
+                    message=f"Starting process: {self._process_id}",
+                ).to_dict()
+            )
 
-        self._emit(
-            ProcessStartedEvent(
-                process_id=self._process_id,
-                name=params.get("name", "Unnamed"),
-            ).to_dict()
-        )
-
-        self._emit(
-            LogEvent(
-                level="info",
-                message=f"Starting process: {self._process_id}",
-            ).to_dict()
-        )
-
-        self._process_task = asyncio.create_task(
-            self._run_process_async(process_data, sourcemap)
-        )
+            self._process_task = asyncio.create_task(
+                self._run_process_async(process_data, sourcemap)
+            )
 
         return {
             "processId": self._process_id,
@@ -354,12 +355,13 @@ class BridgeHandlers:
                     ).to_dict()
                 )
         finally:
-            self._process_future = None
-            self._process_task = None
-            self._process_id = None
-            self._cancel_requested = False
-            self._paused = False
-            self._terminal_event_emitted = False
+            async with self._lifecycle_lock:
+                self._process_future = None
+                self._process_task = None
+                self._process_id = None
+                self._cancel_requested = False
+                self._paused = False
+                self._terminal_event_emitted = False
 
     def _emit_stopped_if_needed(self, message: str) -> None:
         if self._terminal_event_emitted:

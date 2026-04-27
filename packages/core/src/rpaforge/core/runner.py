@@ -16,30 +16,16 @@ from typing import TYPE_CHECKING, Any
 from rpaforge.core.execution import (
     ActivityCall,
     ExecutionResult,
-    ExecutionStatus,
     Process,
 )
 from rpaforge.core.executor import ProcessExecutor, StopExecution
 from rpaforge.core.interfaces import Executor
+from rpaforge.core.safe_evaluator import safe_eval
 
 if TYPE_CHECKING:
     pass
 
 logger = logging.getLogger("rpaforge")
-
-# Import safe evaluator
-try:
-    from rpaforge.core.safe_evaluator import safe_eval
-except ImportError:
-    # Fallback if safe_eval not available
-    def safe_eval(condition: str, variables: dict[str, Any]) -> bool:
-        """Fallback safe_eval that uses restricted eval."""
-        if not condition:
-            return False
-        try:
-            return bool(eval(condition, {"__builtins__": {}}, variables))
-        except Exception:
-            return False
 
 
 class RunnerState(Enum):
@@ -449,37 +435,10 @@ class StudioEngine:
         return self.run_string(source, **kwargs)
 
     def run_string(self, source: str, **_kwargs: Any) -> ExecutionResult:
-        import io
-        from contextlib import redirect_stderr, redirect_stdout
-
-        stdout_capture = io.StringIO()
-        stderr_capture = io.StringIO()
-
-        result = ExecutionResult(
-            status=ExecutionStatus.PASS,
-            message="",
+        raise NotImplementedError(
+            "run_string is disabled for security reasons: exec() with full builtins "
+            "poses an RCE risk. Use diagram-based process execution instead."
         )
-
-        try:
-            self._is_running = True
-            namespace = {"__builtins__": __builtins__}
-
-            with redirect_stdout(stdout_capture), redirect_stderr(stderr_capture):
-                exec(source, namespace)
-
-            output = stdout_capture.getvalue()
-            if stderr_capture.getvalue():
-                output += "\n" + stderr_capture.getvalue()
-            if output:
-                result.message = output
-
-        except Exception as e:
-            result.status = ExecutionStatus.FAIL
-            result.message = str(e)
-        finally:
-            self._is_running = False
-
-        return result
 
     def stop(self) -> None:
         self._runner.stop()

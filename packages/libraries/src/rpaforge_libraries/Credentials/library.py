@@ -42,6 +42,7 @@ class Credentials:
         )
         self._credentials: dict[str, dict[str, Any]] = {}
         self._fernet: Fernet | None = None
+        self._env_vars_set: list[str] = []
         self._ensure_vault()
 
     def _derive_key(self, password: str) -> bytes:
@@ -273,9 +274,21 @@ class Credentials:
         :param name: Credential name.
         """
         cred = self.get_credential(name)
-        os.environ[f"{prefix}_USERNAME"] = cred["username"]
-        os.environ[f"{prefix}_PASSWORD"] = cred["password"]
+        key_user = f"{prefix}_USERNAME"
+        key_pass = f"{prefix}_PASSWORD"
+        os.environ[key_user] = cred["username"]
+        os.environ[key_pass] = cred["password"]
+        self._env_vars_set.extend([key_user, key_pass])
         logger.info(f"Set environment credentials for prefix: {prefix}")
+
+    def clear_environment_credentials(self) -> None:
+        """Remove all environment variables set via set_environment_credential."""
+        for key in self._env_vars_set:
+            os.environ.pop(key, None)
+        self._env_vars_set.clear()
+
+    def __del__(self) -> None:
+        self.clear_environment_credentials()
 
     @activity(name="Export Credentials", category="Credentials")
     @tags("export", "credential")
@@ -323,6 +336,14 @@ class Credentials:
 
         count = 0
         for name, cred in imported.items():
+            if not isinstance(cred, dict):
+                logger.warning("Skipping invalid credential %r: expected dict", name)
+                continue
+            if not isinstance(cred.get("username"), str) or not isinstance(cred.get("password"), str):
+                logger.warning(
+                    "Skipping credential %r: username and password must be strings", name
+                )
+                continue
             if overwrite or name not in self._credentials:
                 self._credentials[name] = cred
                 count += 1
