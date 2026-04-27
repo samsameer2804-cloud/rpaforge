@@ -40,10 +40,14 @@ export function Spinner({ size = 'md', className = '' }: SpinnerProps) {
 export interface LoadingOverlayProps {
   isVisible: boolean;
   message?: string;
+  progress?: number;
 }
 
-export function LoadingOverlay({ isVisible, message = 'Loading...' }: LoadingOverlayProps) {
+export function LoadingOverlay({ isVisible, message = 'Loading...', progress }: LoadingOverlayProps) {
   if (!isVisible) return null;
+
+  const hasProgress = typeof progress === 'number' && progress >= 0;
+  const clampedProgress = hasProgress ? Math.min(100, Math.max(0, progress)) : 0;
 
   return (
     <div
@@ -52,9 +56,29 @@ export function LoadingOverlay({ isVisible, message = 'Loading...' }: LoadingOve
       aria-busy="true"
       aria-live="polite"
     >
-      <div className="bg-white dark:bg-slate-800 rounded-lg p-6 shadow-xl flex flex-col items-center gap-3">
+      <div className="bg-white dark:bg-slate-800 rounded-lg p-6 shadow-xl flex flex-col items-center gap-3 min-w-[240px]">
         <Spinner size="lg" className="text-indigo-600" />
-        <p className="text-slate-700 dark:text-slate-200">{message}</p>
+        <p className="text-slate-700 dark:text-slate-200 text-sm text-center">{message}</p>
+        {hasProgress && (
+          <div className="w-full">
+            <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+              <span>Progress</span>
+              <span>{clampedProgress}%</span>
+            </div>
+            <div
+              className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden"
+              role="progressbar"
+              aria-valuenow={clampedProgress}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
+              <div
+                className="h-full bg-indigo-500 rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${clampedProgress}%` }}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

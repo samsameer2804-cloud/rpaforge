@@ -39,6 +39,7 @@ const Layout: React.FC = () => {
   const executionState = useExecutionStore((state) => state.executionState);
   const executionSpeed = useExecutionStore((state) => state.executionSpeed);
   const setExecutionSpeed = useExecutionStore((state) => state.setExecutionSpeed);
+  const executionProgress = useExecutionStore((state) => state.executionProgress);
   const metadata = useProcessMetadataStore((state) => state.metadata);
   const project = useDiagramStore((state) => state.project);
   const activeDiagramId = useDiagramStore((state) => state.activeDiagramId);
@@ -414,7 +415,7 @@ const Layout: React.FC = () => {
         title={metadata?.name || 'Process Diagram'}
       />
 
-      <LoadingOverlay isVisible={loading.execute} message={loadingMessage || 'Executing...'} />
+      <LoadingOverlay isVisible={loading.execute} message={loadingMessage || 'Executing...'} progress={executionProgress > 0 ? executionProgress : undefined} />
     </div>
   );
 };

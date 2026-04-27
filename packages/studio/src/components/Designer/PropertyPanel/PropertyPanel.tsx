@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { FiTrash2, FiSettings } from 'react-icons/fi';
+import { FiTrash2, FiSettings, FiSliders } from 'react-icons/fi';
 
 import VariableDialog, { type VariableDefinition } from '../VariableDialog';
 import PythonCodeEditor from '../PythonCodeEditor';
@@ -113,7 +113,9 @@ const PropertyPanel: React.FC = () => {
             onOpenDiagram={() => selectedSubDiagram && openDiagram(selectedSubDiagram.id)}
             selectedSubDiagram={selectedSubDiagram}
           />
-        ) : null}
+        ) : (
+          <NoParametersState blockType={title} />
+        )}
 
         {data.tags && data.tags.length > 0 && <TagsList tags={data.tags} />}
       </div>
@@ -137,6 +139,20 @@ const PropertyPanel: React.FC = () => {
     </div>
   );
 };
+
+const NoParametersState: React.FC<{ blockType: string }> = ({ blockType }) => (
+  <div className="flex flex-col items-center justify-center py-8 text-center px-4">
+    <FiSliders className="w-8 h-8 text-slate-300 dark:text-slate-600 mb-2" aria-hidden="true" />
+    <p className="text-sm text-slate-500 dark:text-slate-400">
+      {blockType === 'start' || blockType === 'end'
+        ? `The ${blockType} block has no configurable parameters.`
+        : 'This block has no configurable parameters.'}
+    </p>
+    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+      Use the Description field above to document its purpose.
+    </p>
+  </div>
+);
 
 const DiagramHeader: React.FC<{ diagram: DiagramMetadata | null; onSettings: () => void }> = ({ diagram, onSettings }) => (
   <div className="p-3 border-b border-slate-200 dark:border-slate-700">

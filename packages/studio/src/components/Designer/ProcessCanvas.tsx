@@ -561,10 +561,18 @@ const ProcessCanvasInner: React.FC = () => {
       </ReactFlow>
 
       {isDragOver && (
-        <div 
-          className="absolute inset-0 pointer-events-none border-2 border-dashed border-indigo-500 bg-indigo-500/5 z-10"
+        <div
+          className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center"
           aria-hidden="true"
-        />
+        >
+          <div className="absolute inset-0 border-2 border-dashed border-indigo-400 bg-indigo-500/10 rounded" />
+          <div className="relative flex flex-col items-center gap-2 px-6 py-4 bg-white/90 dark:bg-slate-800/90 rounded-xl shadow-lg border border-indigo-200 dark:border-indigo-700">
+            <svg className="w-8 h-8 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            <span className="text-sm font-medium text-indigo-700 dark:text-indigo-300">Drop to add block</span>
+          </div>
+        </div>
       )}
 
       <CanvasContextMenu
