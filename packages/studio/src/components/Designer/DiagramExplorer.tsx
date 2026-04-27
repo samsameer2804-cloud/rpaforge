@@ -73,6 +73,7 @@ const DiagramExplorer: React.FC<DiagramExplorerProps> = ({
   const [draggedNode, setDraggedNode] = useState<TreeNode | null>(null);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const [settingsDiagramId, setSettingsDiagramId] = useState<string | null>(null);
+  const [fsError, setFsError] = useState<string | null>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
 
   const tree = useMemo((): TreeNode[] => {
@@ -247,6 +248,7 @@ const DiagramExplorer: React.FC<DiagramExplorerProps> = ({
   };
 
   const handleCreateFolder = async (parentPath?: string) => {
+    setFsError(null);
     const newFolderName = 'New Folder';
     let newPath = parentPath ? `${parentPath}/${newFolderName}` : newFolderName;
 
@@ -259,21 +261,25 @@ const DiagramExplorer: React.FC<DiagramExplorerProps> = ({
       counter++;
     }
 
-    await createFolder(newPath);
-    setExpandedFolders((prev) => new Set([...prev, parentPath || '']));
-
-    setTimeout(() => {
-      setEditingNode(`folder:${newPath}`);
-      setEditValue(newFolderName);
-    }, 200);
+    try {
+      await createFolder(newPath);
+      setExpandedFolders((prev) => new Set([...prev, parentPath || '']));
+      setTimeout(() => {
+        setEditingNode(`folder:${newPath}`);
+        setEditValue(newFolderName);
+      }, 200);
+    } catch (err) {
+      setFsError(`Failed to create folder: ${err instanceof Error ? err.message : String(err)}`);
+    }
 
     setContextMenu(null);
   };
 
   const handleCreateDiagram = async (parentPath?: string) => {
+    setFsError(null);
     const newDiagramName = 'New Process';
     let sanitizedName = newDiagramName.toLowerCase().replace(/\s+/g, '-');
-    let relativePath = parentPath 
+    let relativePath = parentPath
       ? `${parentPath}/${sanitizedName}.process`
       : `${sanitizedName}.process`;
 
@@ -283,7 +289,7 @@ const DiagramExplorer: React.FC<DiagramExplorerProps> = ({
     let counter = 1;
     while (existingProcessFiles.some((f) => f.relativePath === relativePath)) {
       sanitizedName = `${newDiagramName.toLowerCase().replace(/\s+/g, '-')}-${counter}`;
-      relativePath = parentPath 
+      relativePath = parentPath
         ? `${parentPath}/${sanitizedName}.process`
         : `${sanitizedName}.process`;
       counter++;
@@ -314,16 +320,19 @@ const DiagramExplorer: React.FC<DiagramExplorerProps> = ({
       },
     };
 
-    await createFile(relativePath, JSON.stringify(emptyProcess, null, 2));
-
-    if (parentPath) {
-      setExpandedFolders((prev) => new Set([...prev, parentPath]));
+    try {
+      await createFile(relativePath, JSON.stringify(emptyProcess, null, 2));
+      if (parentPath) {
+        setExpandedFolders((prev) => new Set([...prev, parentPath]));
+      }
+      setTimeout(() => {
+        setEditingNode(newDiagram.id);
+        setEditValue(newDiagramName);
+      }, 100);
+    } catch (err) {
+      removeDiagram(newDiagram.id);
+      setFsError(`Failed to create process: ${err instanceof Error ? err.message : String(err)}`);
     }
-
-    setTimeout(() => {
-      setEditingNode(newDiagram.id);
-      setEditValue(newDiagramName);
-    }, 100);
 
     setContextMenu(null);
   };
@@ -335,32 +344,39 @@ const DiagramExplorer: React.FC<DiagramExplorerProps> = ({
   };
 
   const handleDelete = async (node: TreeNode) => {
-    await deleteFile(node.relativePath);
-    if (node.type === 'diagram') {
-      removeDiagram(node.id);
+    setFsError(null);
+    try {
+      await deleteFile(node.relativePath);
+      if (node.type === 'diagram') {
+        removeDiagram(node.id);
+      }
+    } catch (err) {
+      setFsError(`Failed to delete "${node.name}": ${err instanceof Error ? err.message : String(err)}`);
     }
     setContextMenu(null);
   };
 
   const handleDuplicate = async (node: TreeNode) => {
+    setFsError(null);
     if (node.type === 'diagram' && node.diagram) {
-      const newName = `${node.name} (Copy)`;
-      const newRelativePath = node.relativePath.replace('.process', '-copy.process');
-      
-      const content = await useProjectFsStore.getState().readFile(node.relativePath);
-      const newContent = content.replace(
-        new RegExp(`"name":\\s*"${node.name}"`),
-        `"name": "${newName}"`
-      );
-      
-      await createFile(newRelativePath, newContent);
-      
-      addDiagram({
-        name: newName,
-        type: node.diagram.type,
-        path: newRelativePath,
-        folder: node.diagram.folder,
-      });
+      try {
+        const newName = `${node.name} (Copy)`;
+        const newRelativePath = node.relativePath.replace('.process', '-copy.process');
+        const content = await useProjectFsStore.getState().readFile(node.relativePath);
+        const newContent = content.replace(
+          new RegExp(`"name":\\s*"${node.name}"`),
+          `"name": "${newName}"`
+        );
+        await createFile(newRelativePath, newContent);
+        addDiagram({
+          name: newName,
+          type: node.diagram.type,
+          path: newRelativePath,
+          folder: node.diagram.folder,
+        });
+      } catch (err) {
+        setFsError(`Failed to duplicate "${node.name}": ${err instanceof Error ? err.message : String(err)}`);
+      }
     }
     setContextMenu(null);
   };
@@ -383,29 +399,34 @@ const DiagramExplorer: React.FC<DiagramExplorerProps> = ({
     }
 
     const newName = editValue.trim();
-    
-    if (node.type === 'folder') {
-      const parentPath = node.relativePath.includes('/')
-        ? node.relativePath.substring(0, node.relativePath.lastIndexOf('/'))
-        : '';
-      const newRelativePath = parentPath ? `${parentPath}/${newName}` : newName;
+    setFsError(null);
 
-      if (node.relativePath !== newRelativePath) {
-        await renameFile(node.relativePath, newRelativePath);
-      }
-    } else if (node.type === 'diagram') {
-      const sanitizedName = newName.toLowerCase().replace(/\s+/g, '-');
-      const parentPath = node.relativePath.includes('/')
-        ? node.relativePath.substring(0, node.relativePath.lastIndexOf('/'))
-        : '';
-      const newRelativePath = parentPath 
-        ? `${parentPath}/${sanitizedName}.process`
-        : `${sanitizedName}.process`;
+    try {
+      if (node.type === 'folder') {
+        const parentPath = node.relativePath.includes('/')
+          ? node.relativePath.substring(0, node.relativePath.lastIndexOf('/'))
+          : '';
+        const newRelativePath = parentPath ? `${parentPath}/${newName}` : newName;
 
-      if (node.relativePath !== newRelativePath) {
-        await renameFile(node.relativePath, newRelativePath);
+        if (node.relativePath !== newRelativePath) {
+          await renameFile(node.relativePath, newRelativePath);
+        }
+      } else if (node.type === 'diagram') {
+        const sanitizedName = newName.toLowerCase().replace(/\s+/g, '-');
+        const parentPath = node.relativePath.includes('/')
+          ? node.relativePath.substring(0, node.relativePath.lastIndexOf('/'))
+          : '';
+        const newRelativePath = parentPath
+          ? `${parentPath}/${sanitizedName}.process`
+          : `${sanitizedName}.process`;
+
+        if (node.relativePath !== newRelativePath) {
+          await renameFile(node.relativePath, newRelativePath);
+        }
+        updateDiagram(node.id, { name: newName, path: newRelativePath });
       }
-      updateDiagram(node.id, { name: newName, path: newRelativePath });
+    } catch (err) {
+      setFsError(`Failed to rename "${node.name}": ${err instanceof Error ? err.message : String(err)}`);
     }
 
     setEditingNode(null);
@@ -690,6 +711,22 @@ const DiagramExplorer: React.FC<DiagramExplorerProps> = ({
           </button>
         </div>
       </div>
+
+      {fsError && (
+        <div
+          className="mx-2 mt-1 px-2 py-1.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-xs text-red-700 dark:text-red-400 flex items-start gap-1"
+          role="alert"
+        >
+          <span className="flex-1">{fsError}</span>
+          <button
+            onClick={() => setFsError(null)}
+            className="flex-shrink-0 text-red-500 hover:text-red-700 dark:hover:text-red-300"
+            aria-label="Dismiss error"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       <div
         className="flex-1 overflow-y-auto py-1"

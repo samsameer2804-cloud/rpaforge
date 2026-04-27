@@ -93,9 +93,11 @@ const Toolbar: React.FC<ToolbarProps> = ({
 
     return (
       <button
-        className="px-3 py-1 bg-green-600 rounded hover:bg-green-700 flex items-center gap-1"
+        className="px-3 py-1 bg-green-600 rounded hover:bg-green-700 flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
         onClick={onRun}
         disabled={!hasMetadata}
+        title={!hasMetadata ? 'Open a process file to enable Run' : 'Run process (F5)'}
+        aria-disabled={!hasMetadata}
       >
         <FiPlay className="w-4 h-4" />
         Run
@@ -150,31 +152,37 @@ const Toolbar: React.FC<ToolbarProps> = ({
 
         <div className="flex items-center gap-1">
           <button
-            className="px-3 py-1 bg-slate-600 rounded hover:bg-slate-700 flex items-center gap-1"
+            className="px-3 py-1 bg-slate-600 rounded hover:bg-slate-700 flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={onExportCode}
             disabled={!hasNodes}
-            title="Export to Python"
+            title={!hasNodes ? 'Add blocks to the diagram first' : 'Export to Python'}
+            aria-disabled={!hasNodes}
           >
             <FiCode className="w-4 h-4" />
             Export
           </button>
           <button
-            className="px-3 py-1 bg-slate-600 rounded hover:bg-slate-700 flex items-center gap-1"
+            className="px-3 py-1 bg-slate-600 rounded hover:bg-slate-700 flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={onShowMermaid}
             disabled={!hasNodes}
-            title="View as Mermaid Diagram"
+            title={!hasNodes ? 'Add blocks to the diagram first' : 'View as Mermaid Diagram'}
+            aria-disabled={!hasNodes}
           >
             <FaProjectDiagram className="w-4 h-4" />
             Diagram
           </button>
-          
-          <div className="flex items-center gap-1 px-2 py-1 bg-slate-700 rounded" title="Execution Speed">
+
+          <div
+            className="flex items-center gap-1 px-2 py-1 bg-slate-700 rounded"
+            title={isRunning ? 'Cannot change speed while process is running' : 'Execution Speed'}
+          >
             <FiActivity className="w-4 h-4 text-slate-300" />
             <select
               value={executionSpeed}
               onChange={(e) => onSpeedChange(parseFloat(e.target.value) as ExecutionSpeed)}
-              className="bg-slate-600 text-white text-sm rounded px-1 py-0.5 border-none outline-none cursor-pointer"
+              className="bg-slate-600 text-white text-sm rounded px-1 py-0.5 border-none outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={isRunning}
+              aria-label="Execution speed"
             >
               {speedOptions.map((speed) => (
                 <option key={speed} value={speed}>
