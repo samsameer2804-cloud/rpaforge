@@ -49,6 +49,27 @@ const PythonCodeEditor: React.FC<PythonCodeEditorProps> = ({
     setIsVariablesPanelOpen(false);
   }, []);
 
+  const handleFormat = useCallback(async () => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const currentCode = editor.getValue();
+
+    try {
+      const result = await window.rpaforge?.editor.formatCode(currentCode);
+      if (result && result.formatted_code !== currentCode) {
+        const position = editor.getPosition();
+        editor.setValue(result.formatted_code);
+        if (position) {
+          editor.setPosition(position);
+        }
+        setCode(result.formatted_code);
+      }
+    } catch (error) {
+      console.error('Format failed:', error);
+    }
+  }, []);
+
   const handleSave = useCallback(() => {
     onSave(code);
     setIsDirty(false);
@@ -163,27 +184,6 @@ const PythonCodeEditor: React.FC<PythonCodeEditorProps> = ({
 
   const handleReplace = useCallback(() => {
     editorRef.current?.getAction('editor.action.startFindReplaceAction')?.run();
-  }, []);
-
-  const handleFormat = useCallback(async () => {
-    const editor = editorRef.current;
-    if (!editor) return;
-
-    const currentCode = editor.getValue();
-
-    try {
-      const result = await window.rpaforge?.editor.formatCode(currentCode);
-      if (result && result.formatted_code !== currentCode) {
-        const position = editor.getPosition();
-        editor.setValue(result.formatted_code);
-        if (position) {
-          editor.setPosition(position);
-        }
-        setCode(result.formatted_code);
-      }
-    } catch (error) {
-      console.error('Format failed:', error);
-    }
   }, []);
 
   const handleInsertSnippet = useCallback((snippet: Snippet) => {
