@@ -46,7 +46,7 @@ interface ToolbarProps {
 const Toolbar: React.FC<ToolbarProps> = ({
   activeTab,
   onTabChange,
-  isConnected,
+  isConnected: _isConnected,
   bridgeState,
   isRunning,
   isPaused,
@@ -161,10 +161,22 @@ const Toolbar: React.FC<ToolbarProps> = ({
       </div>
 
       <div className="flex items-center gap-2">
-        <span className={`text-xs flex items-center gap-1 ${bridgeBadge}`}>
+        <span
+          className={`text-xs flex items-center gap-1 ${bridgeBadge}`}
+          title={
+            bridgeState === 'ready'
+              ? 'Bridge: Python engine running. Your automation will execute.'
+              : bridgeState === 'starting'
+              ? 'Bridge: Starting Python engine...'
+              : bridgeState === 'degraded'
+              ? 'Bridge: Running with limited features. Some activities may not work.'
+              : bridgeState === 'reconnecting'
+              ? 'Bridge: Attempting to reconnect to Python engine...'
+              : 'Bridge: Python engine stopped. Install with: pip install rpaforge'
+          }
+        >
           <span className={`w-2 h-2 rounded-full ${bridgeState === 'ready' ? 'bg-green-400' : bridgeState === 'degraded' ? 'bg-yellow-400' : bridgeState === 'reconnecting' ? 'bg-amber-400' : bridgeState === 'starting' ? 'bg-blue-400' : 'bg-slate-400'}`} />
           Bridge {bridgeLabel}
-          {isConnected && bridgeState === 'ready' ? '' : ''}
         </span>
 
         <div className="flex items-center gap-1">
