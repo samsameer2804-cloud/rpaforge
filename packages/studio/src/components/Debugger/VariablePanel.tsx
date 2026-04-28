@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { FiX, FiEye, FiEyeOff, FiPlus, FiTrash2 } from 'react-icons/fi';
+import { FiX, FiEye, FiEyeOff, FiPlus, FiTrash2, FiInfo } from 'react-icons/fi';
 import ConfirmDialog from '../Common/ConfirmDialog';
 import { useDebuggerStore } from '../../stores/debuggerStore';
 import { useVariableStore } from '../../stores/variableStore';
@@ -126,6 +126,7 @@ const VariablePanel: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'variables' | 'watch' | 'process'>('variables');
   const [showVariableDialog, setShowVariableDialog] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [showGuide, setShowGuide] = useState(true);
 
   const watchedVars = useMemo(() => {
     return variables.filter((v) => watchedVariables.has(v.name));
@@ -168,6 +169,29 @@ const VariablePanel: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col">
+      {showGuide && (
+        <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 border-b border-indigo-100 dark:border-indigo-800">
+          <div className="flex items-start justify-between gap-2">
+            <div className="text-xs text-indigo-700 dark:text-indigo-300">
+              <div className="flex items-center gap-1 font-medium mb-1">
+                <FiInfo className="w-3 h-3" />
+                Variable Panel Guide
+              </div>
+              <ul className="space-y-0.5 text-[11px] opacity-80">
+                <li><strong>Runtime:</strong> Variables from current execution</li>
+                <li><strong>Process:</strong> Project variables</li>
+                <li><strong>Watch:</strong> Track specific variables</li>
+              </ul>
+            </div>
+            <button
+              className="text-indigo-400 hover:text-indigo-600"
+              onClick={() => setShowGuide(false)}
+            >
+              <FiX className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
       <div className="flex items-center justify-between p-3 border-b border-slate-200 dark:border-slate-700">
         <div className="flex gap-1">
           <button
@@ -201,6 +225,15 @@ const VariablePanel: React.FC = () => {
             Watch {watchedVariables.size > 0 && `(${watchedVariables.size})`}
           </button>
         </div>
+        {!showGuide && (
+          <button
+            className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+            onClick={() => setShowGuide(true)}
+            title="Show guide"
+          >
+            <FiInfo className="w-4 h-4" />
+          </button>
+        )}
         <div className="flex gap-1">
           {(activeTab === 'process' || activeTab === 'variables') && (
             <button
