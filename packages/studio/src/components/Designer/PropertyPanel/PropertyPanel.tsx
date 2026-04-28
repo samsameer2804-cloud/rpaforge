@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { FiTrash2, FiSettings, FiSliders } from 'react-icons/fi';
+import { FiTrash2, FiSettings, FiSliders, FiCopy, FiCheck } from 'react-icons/fi';
+import { toast } from 'sonner';
 
 import VariableDialog, { type VariableDefinition } from '../VariableDialog';
 import PythonCodeEditor from '../PythonCodeEditor';
@@ -77,7 +78,7 @@ const PropertyPanel: React.FC = () => {
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <PanelHeader title={title} subtitle={subtitle} onDelete={handleDeleteNode} />
+      <PanelHeader title={title} subtitle={subtitle} nodeId={selectedNodeId || undefined} onDelete={handleDeleteNode} />
 
       <div className="flex-1 space-y-4 overflow-y-auto p-3">
         <DescriptionField value={data.description || ''} onChange={(v) => handlers.handleUpdateNode({ description: v })} />
@@ -200,21 +201,51 @@ const DiagramInputsOutputs: React.FC<{ diagram: DiagramMetadata | null }> = ({ d
   );
 };
 
-const PanelHeader: React.FC<{ title: string; subtitle?: string; onDelete: () => void }> = ({ title, subtitle, onDelete }) => (
-  <div className="border-b border-slate-200 p-3 dark:border-slate-700">
-    <div className="flex items-center justify-between">
-      <h2 id="property-panel-title" className="font-semibold">{title}</h2>
-      <button 
-        className="rounded p-1.5 text-slate-400 hover:bg-slate-200 hover:text-red-500 dark:hover:bg-slate-700" 
-        onClick={onDelete} 
-        aria-label="Delete selected node"
-      >
-        <FiTrash2 className="h-4 w-4" aria-hidden="true" />
-      </button>
+const PanelHeader: React.FC<{ title: string; subtitle?: string; nodeId?: string; onDelete: () => void }> = ({ title, subtitle, nodeId, onDelete }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyId = async () => {
+    if (nodeId) {
+      await navigator.clipboard.writeText(nodeId);
+      setCopied(true);
+      toast.success('Node ID copied');
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  return (
+    <div className="border-b border-slate-200 p-3 dark:border-slate-700">
+      <div className="flex items-center justify-between">
+        <h2 id="property-panel-title" className="font-semibold">{title}</h2>
+        <div className="flex items-center gap-1">
+          {nodeId && (
+            <button
+              className="rounded p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-600 dark:hover:bg-slate-700"
+              onClick={handleCopyId}
+              title="Copy Node ID"
+              aria-label="Copy Node ID"
+            >
+              {copied ? <FiCheck className="h-4 w-4 text-green-500" /> : <FiCopy className="h-4 w-4" />}
+            </button>
+          )}
+          <button
+            className="rounded p-1.5 text-slate-400 hover:bg-slate-200 hover:text-red-500 dark:hover:bg-slate-700"
+            onClick={onDelete}
+            aria-label="Delete selected node"
+          >
+            <FiTrash2 className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+      {subtitle && <div className="mt-1 text-xs text-slate-500">{subtitle}</div>}
+      {nodeId && (
+        <div className="mt-1 text-[10px] text-slate-400 font-mono">
+          ID: {nodeId.slice(0, 8)}...
+        </div>
+      )}
     </div>
-    {subtitle && <div className="mt-1 text-xs text-slate-500">{subtitle}</div>}
-  </div>
-);
+  );
+};
 
 const DescriptionField: React.FC<{ value: string; onChange: (v: string) => void }> = ({ value, onChange }) => (
   <div>
