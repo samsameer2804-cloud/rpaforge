@@ -15,7 +15,7 @@ import { FaMinus, FaLongArrowAltRight } from 'react-icons/fa';
 import { useReactFlow } from '@reactflow/core';
 import { useProcessStore } from '../../stores/processStore';
 
-export type EdgeTypeOption = 'smoothstep' | 'step';
+export type EdgeTypeOption = 'smoothstep' | 'step' | 'default' | 'bendable' | 'straight';
 export type AlignmentType = 'left' | 'center-h' | 'right' | 'top' | 'center-v' | 'bottom';
 export type DistributionType = 'horizontal' | 'vertical';
 
