@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import json
 import time
 from typing import TYPE_CHECKING, Any
 
@@ -111,6 +112,7 @@ class BridgeHandlers:
             "getActivities": self._handle_get_activities,
             "generateCode": self._handle_generate_code,
             "formatCode": self._handle_format_code,
+            "validateCode": self._handle_validate_code,
             "shutdown": self._handle_shutdown,
         }
 
@@ -687,6 +689,85 @@ class BridgeHandlers:
             raise JSONRPCError(
                 code=JSONRPCErrorCode.INTERNAL_ERROR,
                 message=f"Format error: {str(e)}",
+            ) from None
+
+    def _handle_validate_code(self, params: dict) -> dict[str, Any]:
+        import logging
+        import subprocess
+        import tempfile
+
+        logger = logging.getLogger("rpaforge.bridge")
+        code = params.get("code", "")
+
+        if not code:
+            return {"errors": [], "warnings": []}
+
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                suffix=".py",
+                delete=False,
+            ) as f:
+                f.write(code)
+                temp_path = f.name
+
+            result = subprocess.run(
+                ["ruff", "check", temp_path, "--output-format=json"],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+
+            import os
+
+            os.unlink(temp_path)
+
+            errors = []
+            warnings = []
+
+            if result.stdout.strip():
+                try:
+                    diagnostics = json.loads(result.stdout)
+                    for diag in diagnostics:
+                        location = diag.get("location", {})
+                        end_location = diag.get("end_location", {})
+                        severity = diag.get("severity", "error")
+                        code_info = diag.get("code", {})
+                        message = diag.get("message", "")
+
+                        error_entry = {
+                            "line": location.get("line", 1),
+                            "column": location.get("column", 0),
+                            "endLine": end_location.get("line", location.get("line", 1)),
+                            "endColumn": end_location.get("column", 0),
+                            "message": message,
+                            "code": f"{code_info.get('prefix', '')}{code_info.get('value', '')}",
+                            "severity": severity.lower(),
+                        }
+
+                        if severity.lower() == "error":
+                            errors.append(error_entry)
+                        else:
+                            warnings.append(error_entry)
+                except json.JSONDecodeError:
+                    logger.warning(f"Failed to parse ruff check output: {result.stdout}")
+
+            return {"errors": errors, "warnings": warnings}
+        except subprocess.TimeoutExpired:
+            raise JSONRPCError(
+                code=JSONRPCErrorCode.INTERNAL_ERROR,
+                message="Code validation timed out",
+            ) from None
+        except FileNotFoundError:
+            raise JSONRPCError(
+                code=JSONRPCErrorCode.INTERNAL_ERROR,
+                message="Ruff not found. Install with: pip install ruff",
+            ) from None
+        except Exception as e:
+            logger.error(f"Validation error: {e}")
+            raise JSONRPCError(
+                code=JSONRPCErrorCode.INTERNAL_ERROR,
+                message=f"Validation error: {str(e)}",
             ) from None
 
     def _handle_generate_code(self, params: dict) -> dict[str, Any]:

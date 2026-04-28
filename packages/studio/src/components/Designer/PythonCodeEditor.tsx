@@ -11,6 +11,7 @@ import { useRPACompletions } from '../CodeEditor/hooks/useRPACompletions';
 import { useRPAHoverDocs } from '../CodeEditor/hooks/useRPAHoverDocs';
 import { useVariableStore } from '../../stores/variableStore';
 import type { Snippet } from '../CodeEditor/data/snippets';
+import type { ValidationError } from '../../types/ipc-contracts';
 
 interface PythonCodeEditorProps {
   isOpen: boolean;
@@ -33,9 +34,12 @@ const PythonCodeEditor: React.FC<PythonCodeEditorProps> = ({
   const [isVariablesPanelOpen, setIsVariablesPanelOpen] = useState(false);
   const [cursorPosition, setCursorPosition] = useState({ line: 1, column: 1 });
   const [isDirty, setIsDirty] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
+  const [validationWarnings, setValidationWarnings] = useState<ValidationError[]>([]);
 
   const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<typeof Monaco | null>(null);
+  const validationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { activities, registerCompletions } = useRPACompletions();
   const variables = useVariableStore((state) => state.variables);
@@ -101,6 +105,57 @@ const PythonCodeEditor: React.FC<PythonCodeEditorProps> = ({
       disposables.forEach((d) => d?.());
     };
   }, [handleFormat]);
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    const monaco = monacoRef.current;
+    if (!editor || !monaco) return;
+
+    if (validationTimeoutRef.current) {
+      clearTimeout(validationTimeoutRef.current);
+    }
+
+    validationTimeoutRef.current = setTimeout(async () => {
+      try {
+        const result = await window.rpaforge?.editor.validateCode(code);
+        if (result) {
+          setValidationErrors(result.errors);
+          setValidationWarnings(result.warnings);
+
+          const model = editor.getModel();
+          if (model) {
+            const markers: Monaco.editor.IMarkerData[] = [
+              ...result.errors.map((err) => ({
+                severity: monaco.MarkerSeverity.Error,
+                message: err.message,
+                startLineNumber: err.line,
+                startColumn: err.column + 1,
+                endLineNumber: err.endLine,
+                endColumn: err.endColumn + 1,
+              })),
+              ...result.warnings.map((warn) => ({
+                severity: monaco.MarkerSeverity.Warning,
+                message: warn.message,
+                startLineNumber: warn.line,
+                startColumn: warn.column + 1,
+                endLineNumber: warn.endLine,
+                endColumn: warn.endColumn + 1,
+              })),
+            ];
+            monaco.editor.setModelMarkers(model, 'rpaforge-linter', markers);
+          }
+        }
+      } catch (error) {
+        console.error('Validation failed:', error);
+      }
+    }, 500);
+
+    return () => {
+      if (validationTimeoutRef.current) {
+        clearTimeout(validationTimeoutRef.current);
+      }
+    };
+  }, [code]);
 
   const handleFind = useCallback(() => {
     editorRef.current?.getAction('actions.find')?.run();
@@ -305,6 +360,8 @@ const PythonCodeEditor: React.FC<PythonCodeEditorProps> = ({
           encoding="UTF-8"
           language="Python"
           isSaved={!isDirty}
+          errors={validationErrors.length}
+          warnings={validationWarnings.length}
         />
       </div>
     </div>

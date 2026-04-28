@@ -29,6 +29,7 @@ const IPC_CHANNELS = {
   DIALOG_SHOW_OPEN: 'dialog:showOpen',
   DIALOG_SHOW_SAVE: 'dialog:showSave',
   EDITOR_FORMAT_CODE: 'editor:formatCode',
+  EDITOR_VALIDATE_CODE: 'editor:validateCode',
   FS_SET_PROJECT_ROOT: 'fs:setProjectRoot',
   FS_PATH_EXISTS: 'fs:pathExists',
   FS_READ_DIR: 'fs:readDir',
@@ -93,6 +94,7 @@ const api: StudioAPI = {
 
   editor: {
     formatCode: (code) => ipcRenderer.invoke(IPC_CHANNELS.EDITOR_FORMAT_CODE, code),
+    validateCode: (code) => ipcRenderer.invoke(IPC_CHANNELS.EDITOR_VALIDATE_CODE, code),
   },
 
   fs: {

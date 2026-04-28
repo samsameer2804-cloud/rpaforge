@@ -102,6 +102,18 @@ export interface DebuggerAPI {
 export interface EditorAPI {
   /** Format Python code using ruff */
   formatCode: (code: string) => Promise<{ formatted_code: string; changed: boolean }>;
+  /** Validate Python code using ruff check */
+  validateCode: (code: string) => Promise<{ errors: ValidationError[]; warnings: ValidationError[] }>;
+}
+
+export interface ValidationError {
+  line: number;
+  column: number;
+  endLine: number;
+  endColumn: number;
+  message: string;
+  code: string;
+  severity: 'error' | 'warning';
 }
 
 // =============================================================================
@@ -220,6 +232,7 @@ export const IPC_CHANNELS = {
 
   // Editor channels
   EDITOR_FORMAT_CODE: 'editor:formatCode',
+  EDITOR_VALIDATE_CODE: 'editor:validateCode',
 
   // FileSystem channels
   FS_SET_PROJECT_ROOT: 'fs:setProjectRoot',

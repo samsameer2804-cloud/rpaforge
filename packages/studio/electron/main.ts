@@ -273,6 +273,11 @@ function setupIPCHandlers() {
     return pythonBridge?.sendRequest('formatCode', { code });
   });
 
+  ipcMain.handle(IPC_CHANNELS.EDITOR_VALIDATE_CODE, async (_, code: string) => {
+    validateSafeString(code, 'code');
+    return pythonBridge?.sendRequest('validateCode', { code });
+  });
+
   ipcMain.handle(IPC_CHANNELS.FS_SET_PROJECT_ROOT, async (_, rootPath: string) => {
     setProjectRoot(rootPath);
     logger.info(`Project root set to: ${rootPath}`);
