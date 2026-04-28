@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { FiSearch, FiChevronDown, FiChevronRight } from 'react-icons/fi';
+import { FiSearch, FiChevronDown, FiChevronRight, FiInfo } from 'react-icons/fi';
 import {
   FiMonitor,
   FiGlobe,
@@ -29,6 +29,7 @@ interface LibraryStyle {
   icon: React.ReactNode;
   color: string;
   bgColor: string;
+  description: string;
 }
 
 const LIBRARY_STYLES: Record<string, LibraryStyle> = {
@@ -36,61 +37,73 @@ const LIBRARY_STYLES: Record<string, LibraryStyle> = {
     icon: <FiSettings className="w-4 h-4" />,
     color: '#6366f1',
     bgColor: '#EEF2FF',
+    description: 'Basic operations (Log, Sleep, Set Variable)',
   },
   DesktopUI: {
     icon: <FiMonitor className="w-4 h-4" />,
     color: '#8B5CF6',
     bgColor: '#F5F3FF',
+    description: 'Windows application automation',
   },
   WebUI: {
     icon: <FiGlobe className="w-4 h-4" />,
     color: '#3B82F6',
     bgColor: '#EFF6FF',
+    description: 'Browser automation (click, type, navigate)',
   },
   Excel: {
     icon: <FiGrid className="w-4 h-4" />,
     color: '#10B981',
     bgColor: '#ECFDF5',
+    description: 'Spreadsheet operations (read, write)',
   },
   File: {
     icon: <FiFolder className="w-4 h-4" />,
     color: '#F59E0B',
     bgColor: '#FFFBEB',
+    description: 'File system operations',
   },
   String: {
     icon: <FiType className="w-4 h-4" />,
     color: '#6366F1',
     bgColor: '#EEF2FF',
+    description: 'Text manipulation',
   },
   DateTime: {
     icon: <FiClock className="w-4 h-4" />,
     color: '#0EA5E9',
     bgColor: '#F0F9FF',
+    description: 'Date and time operations',
   },
   Variables: {
     icon: <FiBox className="w-4 h-4" />,
     color: '#64748B',
     bgColor: '#F8FAFC',
+    description: 'Variable management',
   },
   Flow: {
     icon: <FiZap className="w-4 h-4" />,
     color: '#EC4899',
     bgColor: '#FDF2F8',
+    description: 'Flow control activities',
   },
   Database: {
     icon: <FiDatabase className="w-4 h-4" />,
     color: '#F59E0B',
     bgColor: '#FFFBEB',
+    description: 'Database operations',
   },
   OCR: {
     icon: <FiFileText className="w-4 h-4" />,
     color: '#EC4899',
     bgColor: '#FDF2F8',
+    description: 'Text recognition from images',
   },
   Credentials: {
     icon: <FiLock className="w-4 h-4" />,
     color: '#64748B',
     bgColor: '#F8FAFC',
+    description: 'Secure credential storage',
   },
 };
 
@@ -307,6 +320,7 @@ const ActivityCategorySection: React.FC<ActivityCategorySectionProps> = ({
         onClick={() => setIsExpanded(!isExpanded)}
         aria-expanded={isExpanded}
         aria-label={`${category.name}, ${filteredItems.length} activities`}
+        title={style.description}
       >
         {isExpanded ? (
           <FiChevronDown className="w-4 h-4" aria-hidden="true" />
@@ -390,6 +404,32 @@ const ActivityPalette: React.FC = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto py-2">
+        {!searchQuery && categories.length > 0 && (
+          <div className="px-3 pb-3 mb-2 border-b border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-1 text-xs text-slate-500 mb-2">
+              <FiInfo className="w-3 h-3" />
+              <span className="font-medium">Quick Start</span>
+            </div>
+            <div className="grid grid-cols-2 gap-1 text-[10px] text-slate-600 dark:text-slate-400">
+              <div className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded" style={{ backgroundColor: '#6366f1' }} />
+                BuiltIn - basic ops
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded" style={{ backgroundColor: '#3B82F6' }} />
+                WebUI - browser
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded" style={{ backgroundColor: '#8B5CF6' }} />
+                DesktopUI - apps
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded" style={{ backgroundColor: '#10B981' }} />
+                Excel - sheets
+              </div>
+            </div>
+          </div>
+        )}
         {isLoading && (
           <div className="px-3 pb-2 text-xs text-slate-500">Loading SDK activities…</div>
         )}
