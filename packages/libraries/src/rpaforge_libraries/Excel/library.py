@@ -248,9 +248,7 @@ class Excel:
 
     @activity(name="Insert Rows", category="Excel")
     @tags("row", "insert")
-    def insert_rows(
-        self, row: int, count: int = 1, sheet: str | None = None
-    ) -> None:
+    def insert_rows(self, row: int, count: int = 1, sheet: str | None = None) -> None:
         """Insert blank rows above the given row number.
 
         :param row: Row number to insert above (1-based).
@@ -265,9 +263,7 @@ class Excel:
 
     @activity(name="Delete Rows", category="Excel")
     @tags("row", "delete")
-    def delete_rows(
-        self, row: int, count: int = 1, sheet: str | None = None
-    ) -> None:
+    def delete_rows(self, row: int, count: int = 1, sheet: str | None = None) -> None:
         """Delete rows starting from the given row number.
 
         :param row: Starting row number (1-based).

@@ -363,7 +363,9 @@ class ProcessExecutor:
                     res = self._run_activity(act)
                     branch_results[index].append(res)
                     if res["status"] == ExecutionStatus.FAIL:
-                        branch_errors[index] = Exception(res.get("error", "branch failed"))
+                        branch_errors[index] = Exception(
+                            res.get("error", "branch failed")
+                        )
                         return
                 except Exception as exc:
                     branch_errors[index] = exc
@@ -380,9 +382,11 @@ class ProcessExecutor:
 
         failed_branches = [i for i, err in enumerate(branch_errors) if err is not None]
         status = ExecutionStatus.FAIL if failed_branches else ExecutionStatus.PASS
-        error_msg = "; ".join(
-            f"branch {i}: {branch_errors[i]}" for i in failed_branches
-        ) if failed_branches else None
+        error_msg = (
+            "; ".join(f"branch {i}: {branch_errors[i]}" for i in failed_branches)
+            if failed_branches
+            else None
+        )
 
         if status == ExecutionStatus.FAIL:
             logger.error(f"ParallelGroup {group.node_id!r}: {error_msg}")

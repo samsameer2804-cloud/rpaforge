@@ -83,9 +83,7 @@ class ParallelGroup:
         return {
             "type": "parallel",
             "node_id": self.node_id,
-            "branches": [
-                [a.to_dict() for a in branch] for branch in self.branches
-            ],
+            "branches": [[a.to_dict() for a in branch] for branch in self.branches],
             "fail_fast": self.fail_fast,
         }
 

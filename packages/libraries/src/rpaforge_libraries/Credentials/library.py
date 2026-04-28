@@ -45,7 +45,9 @@ class Credentials:
         self._env_vars_set: list[str] = []
         self._ensure_vault()
 
-    def _derive_key(self, password: str, salt: bytes | None = None) -> tuple[bytes, bytes]:
+    def _derive_key(
+        self, password: str, salt: bytes | None = None
+    ) -> tuple[bytes, bytes]:
         """Derive encryption key from password using PBKDF2.
 
         Returns (key, salt). Caller must persist the salt alongside the vault
@@ -64,6 +66,7 @@ class Credentials:
     def _load_key_from_keystore(self) -> bytes | None:
         try:
             import keyring  # type: ignore[import]
+
             stored = keyring.get_password("rpaforge_vault", str(self._vault_path))
             if stored:
                 return stored.encode("ascii")
@@ -74,7 +77,10 @@ class Credentials:
     def _save_key_to_keystore(self, key: bytes) -> bool:
         try:
             import keyring  # type: ignore[import]
-            keyring.set_password("rpaforge_vault", str(self._vault_path), key.decode("ascii"))
+
+            keyring.set_password(
+                "rpaforge_vault", str(self._vault_path), key.decode("ascii")
+            )
             return True
         except Exception:
             return False
@@ -366,9 +372,12 @@ class Credentials:
             if not isinstance(cred, dict):
                 logger.warning("Skipping invalid credential %r: expected dict", name)
                 continue
-            if not isinstance(cred.get("username"), str) or not isinstance(cred.get("password"), str):
+            if not isinstance(cred.get("username"), str) or not isinstance(
+                cred.get("password"), str
+            ):
                 logger.warning(
-                    "Skipping credential %r: username and password must be strings", name
+                    "Skipping credential %r: username and password must be strings",
+                    name,
                 )
                 continue
             if overwrite or name not in self._credentials:

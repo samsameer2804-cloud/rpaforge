@@ -131,6 +131,7 @@ class SubprocessExecutor:
     def _kill_child_processes(self) -> None:
         try:
             import psutil
+
             current = psutil.Process()
             for child in current.children(recursive=True):
                 with contextlib.suppress(psutil.NoSuchProcess):

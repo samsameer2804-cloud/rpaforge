@@ -62,7 +62,9 @@ class WebUI:
             # from within an already-running asyncio loop causes a conflict on
             # some platforms.  Run it in a dedicated thread to get a clean loop.
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-                self._playwright = pool.submit(lambda: sync_playwright().start()).result()
+                self._playwright = pool.submit(
+                    lambda: sync_playwright().start()
+                ).result()
         else:
             self._playwright = sync_playwright().start()
 

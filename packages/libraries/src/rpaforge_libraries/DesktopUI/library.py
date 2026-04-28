@@ -434,9 +434,7 @@ class DesktopUI:
 
     @activity(name="Right Click Element", category="Desktop")
     @tags("input", "mouse")
-    def right_click_element(
-        self, selector: str, timeout: str = "10s"
-    ) -> None:
+    def right_click_element(self, selector: str, timeout: str = "10s") -> None:
         """Right-click a UI element.
 
         :param selector: Element selector.
@@ -448,9 +446,7 @@ class DesktopUI:
 
     @activity(name="Mouse Hover", category="Desktop")
     @tags("input", "mouse")
-    def mouse_hover(
-        self, selector: str, timeout: str = "10s"
-    ) -> None:
+    def mouse_hover(self, selector: str, timeout: str = "10s") -> None:
         """Move the mouse cursor over an element without clicking.
 
         :param selector: Element selector.
@@ -529,9 +525,7 @@ class DesktopUI:
     @activity(name="Attach By PID", category="Desktop")
     @tags("application", "attach")
     @output("Application ID")
-    def attach_by_pid(
-        self, pid: int, app_id: str | None = None
-    ) -> str:
+    def attach_by_pid(self, pid: int, app_id: str | None = None) -> str:
         """Attach to a running application by its process ID.
 
         :param pid: Process ID of the target application.

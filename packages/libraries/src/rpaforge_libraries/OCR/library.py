@@ -279,7 +279,9 @@ class OCR:
         """
         Image, _ = self._pillow
         pytesseract = self._tesseract
-        threshold = min_confidence if min_confidence is not None else self._min_confidence
+        threshold = (
+            min_confidence if min_confidence is not None else self._min_confidence
+        )
         image = Image.open(path)
         data = pytesseract.image_to_data(
             image,
@@ -317,7 +319,11 @@ class OCR:
         pixels1 = list(img1.getdata())
         pixels2 = list(img2.getdata())
         total = len(pixels1) * 3
-        diff = sum(abs(a - b) for p1, p2 in zip(pixels1, pixels2, strict=False) for a, b in zip(p1, p2, strict=False))
+        diff = sum(
+            abs(a - b)
+            for p1, p2 in zip(pixels1, pixels2, strict=False)
+            for a, b in zip(p1, p2, strict=False)
+        )
         score = round(1.0 - diff / (total * 255), 4)
         logger.info(f"Image similarity: {score}")
         return score

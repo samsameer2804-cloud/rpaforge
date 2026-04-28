@@ -331,7 +331,9 @@ class Database:
             out.write_text("")
             return str(out.resolve())
         with out.open("w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()), delimiter=delimiter)
+            writer = csv.DictWriter(
+                f, fieldnames=list(rows[0].keys()), delimiter=delimiter
+            )
             writer.writeheader()
             writer.writerows(rows)
         logger.info(f"Exported {len(rows)} rows to {path}")
