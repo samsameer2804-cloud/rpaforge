@@ -1,9 +1,21 @@
-import React from 'react';
-import { FiPause, FiPlay, FiSquare, FiActivity } from 'react-icons/fi';
+import React, { useState, useEffect, useMemo } from 'react';
+import { FiPause, FiPlay, FiSquare, FiActivity, FiZap } from 'react-icons/fi';
 import type { ExecutionState, ExecutionSpeed } from '../../stores/processStore';
 import type { ProcessMetadata } from '../../stores/processStore';
 import type { Capabilities } from '../../types/engine';
 import type { BridgeState } from '../../types/events';
+
+const TIPS = [
+  'Press Ctrl+Space to quick-add activities',
+  'Drag edges between blocks to connect them',
+  'Use Ctrl+C/V to copy and paste blocks',
+  'Double-click a block to edit its properties',
+  'Press F5 to run your process',
+  'Add breakpoints to debug your workflow',
+  'Use the Variable Panel to watch values',
+  'Export your process as Python code',
+  'Save your project with Ctrl+S',
+];
 
 interface StatusBarProps {
   activeTab: 'designer' | 'debugger' | 'console';
@@ -26,6 +38,22 @@ const StatusBar: React.FC<StatusBarProps> = ({
   showConsole,
   onToggleConsole,
 }) => {
+  const [currentTipIndex, setCurrentTipIndex] = useState(0);
+  const [showTip, setShowTip] = useState(false);
+
+  const randomTip = useMemo(() => {
+    return TIPS[Math.floor(Math.random() * TIPS.length)];
+  }, []);
+
+  useEffect(() => {
+    setShowTip(false);
+    const timer = setTimeout(() => {
+      setShowTip(true);
+      setCurrentTipIndex((prev) => (prev + 1) % TIPS.length);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [currentTipIndex]);
+
   const runtimeSummary = capabilities
     ? `Engine ${capabilities.version} | ${
         capabilities.features.debugger ? 'Debugger' : 'No debugger'
@@ -72,6 +100,17 @@ const StatusBar: React.FC<StatusBarProps> = ({
         </span>
         {metadata && <span className="text-slate-500">{metadata.name}</span>}
         <span className="text-slate-500">Bridge: {bridgeState}</span>
+        {activeTab === 'designer' && executionState !== 'running' && (
+          <span
+            className={`text-indigo-600 dark:text-indigo-400 flex items-center gap-1 transition-opacity ${
+              showTip ? 'opacity-100' : 'opacity-0'
+            }`}
+            title={randomTip}
+          >
+            <FiZap className="w-3 h-3" />
+            <span className="max-w-48 truncate">{randomTip}</span>
+          </span>
+        )}
       </div>
       <div className="flex items-center gap-4">
         {activeTab === 'designer' && (
