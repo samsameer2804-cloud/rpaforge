@@ -147,12 +147,14 @@ const BlockItem: React.FC<BlockItemProps> = ({ block, onDragStart }) => {
     colors = END_COLOR;
   }
   const icon = BLOCK_ICONS[block.type];
+  const tooltip = block.description ? `${block.name}\n\n${block.description}` : block.name;
 
   return (
     <div
       className="flex items-center gap-2 px-2 py-1.5 rounded cursor-grab hover:bg-slate-100 transition-colors group"
       draggable
       onDragStart={(e) => onDragStart(e, block)}
+      title={tooltip}
     >
       <span
         className="w-6 h-6 flex items-center justify-center rounded text-white text-sm"
@@ -179,12 +181,16 @@ interface ActivityItemProps {
 const ActivityItem: React.FC<ActivityItemProps> = ({ activity, onDragStart, libraryStyle }) => {
   const style = libraryStyle || getLibraryStyle(getActivityDisplayLibrary(activity));
   const libraryName = getActivityDisplayLibrary(activity);
-  
+  const tooltip = activity.description
+    ? `${activity.name}\n\n${activity.description}\n\nLibrary: ${libraryName}`
+    : `${activity.name}\n\nLibrary: ${libraryName}`;
+
   return (
     <div
       className="flex items-center gap-2 px-2 py-1.5 rounded cursor-grab hover:bg-slate-100 transition-colors"
       draggable
       onDragStart={(e) => onDragStart(e, activity)}
+      title={tooltip}
     >
       <span
         className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded text-base"
