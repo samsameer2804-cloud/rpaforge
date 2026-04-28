@@ -224,7 +224,9 @@ class ProcessExecutor:
         self._context: ExecutionContext | None = None
         self._lock = threading.Lock()
         self._subprocess_executor: SubprocessExecutor | None = (
-            SubprocessExecutor() if _USE_SUBPROCESS and SubprocessExecutor is not None else None
+            SubprocessExecutor()
+            if _USE_SUBPROCESS and SubprocessExecutor is not None
+            else None
         )
 
     def register_library(self, name: str, instance: Any) -> None:
