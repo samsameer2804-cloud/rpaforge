@@ -96,7 +96,13 @@ const Toolbar: React.FC<ToolbarProps> = ({
         className="px-3 py-1 bg-green-600 rounded hover:bg-green-700 flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
         onClick={onRun}
         disabled={!hasMetadata}
-        title={!hasMetadata ? 'Open a process file to enable Run' : 'Run process (F5)'}
+        title={
+          !hasMetadata
+            ? 'Open or create a project to run (Ctrl+N or Ctrl+O)'
+            : !hasNodes
+            ? 'Add activities to the canvas first'
+            : 'Run process (F5)'
+          }
         aria-disabled={!hasMetadata}
       >
         <FiPlay className="w-4 h-4" />
