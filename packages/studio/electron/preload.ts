@@ -28,6 +28,7 @@ const IPC_CHANNELS = {
   DEBUGGER_GET_CALL_STACK: 'debugger:getCallStack',
   DIALOG_SHOW_OPEN: 'dialog:showOpen',
   DIALOG_SHOW_SAVE: 'dialog:showSave',
+  EDITOR_FORMAT_CODE: 'editor:formatCode',
   FS_SET_PROJECT_ROOT: 'fs:setProjectRoot',
   FS_PATH_EXISTS: 'fs:pathExists',
   FS_READ_DIR: 'fs:readDir',
@@ -88,6 +89,10 @@ const api: StudioAPI = {
   dialog: {
     showOpenDialog: (options) => ipcRenderer.invoke(IPC_CHANNELS.DIALOG_SHOW_OPEN, options),
     showSaveDialog: (options) => ipcRenderer.invoke(IPC_CHANNELS.DIALOG_SHOW_SAVE, options),
+  },
+
+  editor: {
+    formatCode: (code) => ipcRenderer.invoke(IPC_CHANNELS.EDITOR_FORMAT_CODE, code),
   },
 
   fs: {

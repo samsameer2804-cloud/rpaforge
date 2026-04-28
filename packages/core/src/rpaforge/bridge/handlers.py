@@ -110,6 +110,7 @@ class BridgeHandlers:
             "getCallStack": self._handle_get_call_stack,
             "getActivities": self._handle_get_activities,
             "generateCode": self._handle_generate_code,
+            "formatCode": self._handle_format_code,
             "shutdown": self._handle_shutdown,
         }
 
@@ -169,6 +170,11 @@ class BridgeHandlers:
         self._pending_breakpoints.clear()
 
     def _handle_ping(self, _params: dict) -> dict[str, Any]:
+        """Respond to a heartbeat ping and update the last-heartbeat timestamp.
+
+        Request: no required fields.
+        Response: pong, timestamp, status, processId, isRunning, isPaused.
+        """
         self._last_heartbeat = time.time()
         return {
             "pong": True,
@@ -188,6 +194,11 @@ class BridgeHandlers:
         return "running"
 
     def _handle_get_capabilities(self, _params: dict) -> dict[str, Any]:
+        """Return engine version, supported features, and registered library names.
+
+        Request: no required fields.
+        Response: version, features dict, libraries list.
+        """
         return {
             "version": "0.2.0",
             "features": {
@@ -201,6 +212,12 @@ class BridgeHandlers:
         }
 
     async def _handle_run_process(self, params: dict) -> dict[str, Any]:
+        """Start a process from a serialised process dict or Robot Framework source string.
+
+        Request: process or source (required), name, sourcemap.
+        Response: processId, status.
+        Raises: JSONRPCError if process/source is missing or a process is already running.
+        """
         process_data = params.get("process") or params.get("source")
         sourcemap = params.get("sourcemap")
 
@@ -247,6 +264,12 @@ class BridgeHandlers:
         }
 
     async def _handle_run_diagram(self, params: dict) -> dict[str, Any]:
+        """Convert a visual diagram to a process and execute it.
+
+        Request: diagram (required) — serialised diagram with nodes/edges/metadata.
+        Response: processId, status.
+        Raises: JSONRPCError if diagram is missing or a process is already running.
+        """
         diagram = params.get("diagram")
 
         if not diagram:
@@ -419,6 +442,11 @@ class BridgeHandlers:
         return self._engine.run_string(source)
 
     def _handle_stop_process(self, _params: dict) -> dict[str, Any]:
+        """Request cancellation of the currently running process.
+
+        Request: no required fields.
+        Response: status ('cancelling', 'no_process', or 'no_running_process'), processId.
+        """
         if not self._process_id:
             return {"status": "no_process"}
 
@@ -433,12 +461,22 @@ class BridgeHandlers:
         return {"status": "cancelling", "processId": self._process_id}
 
     def _handle_pause_process(self, _params: dict) -> dict[str, Any]:
+        """Pause the currently running process.
+
+        Request: no required fields.
+        Response: status ('paused' or 'not_running').
+        """
         if self._runner and self._runner.is_running:
             self._runner.pause()
             return {"status": "paused"}
         return {"status": "not_running"}
 
     def _handle_resume_process(self, _params: dict) -> dict[str, Any]:
+        """Resume a paused process.
+
+        Request: no required fields.
+        Response: status ('running' or 'not_paused').
+        """
         if self._runner and self._runner.is_paused:
             self._runner.resume()
             return {"status": "running"}
@@ -590,6 +628,66 @@ class BridgeHandlers:
         ]
 
         return {"activities": activities}
+
+    def _handle_format_code(self, params: dict) -> dict[str, Any]:
+        import logging
+        import subprocess
+        import tempfile
+
+        logger = logging.getLogger("rpaforge.bridge")
+        code = params.get("code", "")
+
+        if not code:
+            return {"formatted_code": "", "changed": False}
+
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                suffix=".py",
+                delete=False,
+            ) as f:
+                f.write(code)
+                temp_path = f.name
+
+            result = subprocess.run(
+                ["ruff", "format", temp_path],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+
+            with open(temp_path) as f:
+                formatted_code = f.read()
+
+            import os
+
+            os.unlink(temp_path)
+
+            if result.returncode != 0 and "error" in result.stderr.lower():
+                logger.warning(f"Ruff format warning: {result.stderr}")
+
+            changed = formatted_code != code
+
+            return {
+                "formatted_code": formatted_code,
+                "changed": changed,
+            }
+        except subprocess.TimeoutExpired:
+            raise JSONRPCError(
+                code=JSONRPCErrorCode.INTERNAL_ERROR,
+                message="Code formatting timed out",
+            ) from None
+        except FileNotFoundError:
+            raise JSONRPCError(
+                code=JSONRPCErrorCode.INTERNAL_ERROR,
+                message="Ruff formatter not found. Install with: pip install ruff",
+            ) from None
+        except Exception as e:
+            logger.error(f"Format error: {e}")
+            raise JSONRPCError(
+                code=JSONRPCErrorCode.INTERNAL_ERROR,
+                message=f"Format error: {str(e)}",
+            ) from None
 
     def _handle_generate_code(self, params: dict) -> dict[str, Any]:
         from rpaforge.codegen.python_generator import PythonCodeGenerator

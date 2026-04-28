@@ -96,6 +96,15 @@ export interface DebuggerAPI {
 }
 
 // =============================================================================
+// Editor API (code editor utilities)
+// =============================================================================
+
+export interface EditorAPI {
+  /** Format Python code using ruff */
+  formatCode: (code: string) => Promise<{ formatted_code: string; changed: boolean }>;
+}
+
+// =============================================================================
 // Dialog API (file/folder pickers)
 // =============================================================================
 
@@ -166,6 +175,7 @@ export interface StudioAPI {
   bridge: BridgeAPI;
   engine: EngineAPI;
   debugger: DebuggerAPI;
+  editor: EditorAPI;
   dialog: DialogAPI;
   fs: FileSystemAPI;
 }
@@ -207,6 +217,9 @@ export const IPC_CHANNELS = {
   // Dialog channels
   DIALOG_SHOW_OPEN: 'dialog:showOpen',
   DIALOG_SHOW_SAVE: 'dialog:showSave',
+
+  // Editor channels
+  EDITOR_FORMAT_CODE: 'editor:formatCode',
 
   // FileSystem channels
   FS_SET_PROJECT_ROOT: 'fs:setProjectRoot',
