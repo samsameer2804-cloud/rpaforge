@@ -16,6 +16,7 @@ import {
 import { useFileOperations } from '../../hooks/useFileOperations';
 import { useProjectFsStore } from '../../stores/projectFsStore';
 import { PROJECT_TEMPLATES, PROCESS_TEMPLATES } from '../../templates';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 const getTemplateIcon = (iconName: string): React.ReactNode => {
   switch (iconName) {
@@ -46,12 +47,13 @@ interface NewProjectDialogProps {
 const NewProjectDialog: React.FC<NewProjectDialogProps> = ({ isOpen, onClose, onCreate, onCreateInFolder }) => {
   const [name, setName] = useState('New Project');
   const [selectedTemplate, setSelectedTemplate] = useState('empty');
+  const trapRef = useFocusTrap(isOpen);
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div ref={trapRef as React.RefObject<HTMLDivElement>} className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white">New Project</h2>
           <button
@@ -74,7 +76,7 @@ const NewProjectDialog: React.FC<NewProjectDialogProps> = ({ isOpen, onClose, on
           />
 
           <label className="block text-sm font-medium mb-2 text-slate-700 dark:text-slate-300">Project Template</label>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-2 mb-3">
             {PROJECT_TEMPLATES.map((template) => (
               <button
                 key={template.metadata.id}
@@ -105,6 +107,31 @@ const NewProjectDialog: React.FC<NewProjectDialogProps> = ({ isOpen, onClose, on
               </button>
             ))}
           </div>
+          {selectedTemplate && (
+            <div className="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg text-xs">
+              {selectedTemplate === 'empty' && (
+                <div>
+                  <div className="font-medium text-slate-700 dark:text-slate-200 mb-1">Empty Project</div>
+                  <div className="text-slate-500">Start from scratch with just a Start block. Best for learning or simple processes.</div>
+                  <div className="mt-1 text-slate-400">Includes: Start block</div>
+                </div>
+              )}
+              {selectedTemplate === 'simple-sequence' && (
+                <div>
+                  <div className="font-medium text-slate-700 dark:text-slate-200 mb-1">Simple Sequence</div>
+                  <div className="text-slate-500">Basic linear workflow for beginners. Perfect first project.</div>
+                  <div className="mt-1 text-slate-400">Includes: Start → Delay → End</div>
+                </div>
+              )}
+              {selectedTemplate === 'reframework' && (
+                <div>
+                  <div className="font-medium text-slate-700 dark:text-slate-200 mb-1">REFramework</div>
+                  <div className="text-slate-500">Enterprise-grade template with queue processing, retry logic, and error handling.</div>
+                  <div className="mt-1 text-slate-400">Includes: Init, Process Item, Queue handling, Excel integration</div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end gap-2 p-4 border-t border-slate-200 dark:border-slate-700">
@@ -152,12 +179,13 @@ interface NewProcessDialogProps {
 const NewProcessDialog: React.FC<NewProcessDialogProps> = ({ isOpen, onClose, onCreate }) => {
   const [name, setName] = useState('New Process');
   const [selectedTemplate, setSelectedTemplate] = useState('empty-process');
+  const trapRef = useFocusTrap(isOpen);
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div ref={trapRef as React.RefObject<HTMLDivElement>} className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white">New Process</h2>
           <button
@@ -246,12 +274,13 @@ interface SaveAsDialogProps {
 
 const SaveAsDialog: React.FC<SaveAsDialogProps> = ({ isOpen, defaultName, onClose, onSave }) => {
   const [name, setName] = useState(defaultName);
+  const trapRef = useFocusTrap(isOpen);
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-md">
+      <div ref={trapRef as React.RefObject<HTMLDivElement>} className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-md">
         <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Save Project As</h2>
           <button
