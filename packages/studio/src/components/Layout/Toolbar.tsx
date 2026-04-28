@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   FiPlay,
   FiPause,
@@ -9,6 +9,8 @@ import {
   FiArrowUpCircle,
   FiActivity,
   FiFolder,
+  FiInfo,
+  FiX,
 } from 'react-icons/fi';
 import { FaProjectDiagram } from 'react-icons/fa';
 import FileMenu from '../Common/FileMenu';
@@ -65,6 +67,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
   onStepInto,
   onStepOut,
 }) => {
+  const [showAbout, setShowAbout] = useState(false);
   const speedOptions: ExecutionSpeed[] = [0.5, 1, 2, 5];
 
   const getExecutionButton = () => {
@@ -125,6 +128,14 @@ const Toolbar: React.FC<ToolbarProps> = ({
     <header className="h-12 bg-slate-800 text-white flex items-center px-4 justify-between flex-shrink-0">
       <div className="flex items-center gap-4">
         <h1 className="text-lg font-semibold">RPAForge Studio</h1>
+        <button
+          className="p-1.5 rounded hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+          onClick={() => setShowAbout(true)}
+          title="About RPAForge"
+          aria-label="About RPAForge"
+        >
+          <FiInfo className="w-4 h-4" />
+        </button>
         {projectName && (
           <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-700 rounded">
             <FiFolder className="w-4 h-4 text-indigo-400" />
@@ -241,6 +252,45 @@ const Toolbar: React.FC<ToolbarProps> = ({
           )}
         </div>
       </div>
+
+      {showAbout && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">About RPAForge</h2>
+              <button
+                className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700"
+                onClick={() => setShowAbout(false)}
+              >
+                <FiX className="w-5 h-5 text-slate-500" />
+              </button>
+            </div>
+            <div className="space-y-4 text-sm text-slate-600 dark:text-slate-300">
+              <p className="font-medium text-slate-900 dark:text-white text-base">
+                RPAForge Studio — Visual RPA Automation Tool
+              </p>
+              <p>
+                Build automation workflows by dragging activities onto the canvas.
+                Activities are automation blocks that perform tasks like clicking,
+                typing, reading files, and more.
+              </p>
+              <div className="bg-slate-50 dark:bg-slate-700 rounded p-3">
+                <div className="font-medium text-slate-700 dark:text-slate-200 mb-2">Quick Start</div>
+                <ol className="list-decimal list-inside space-y-1 text-xs">
+                  <li>Add a <strong>Start</strong> block from the palette</li>
+                  <li>Drag activities onto the canvas</li>
+                  <li>Connect blocks by dragging between ports</li>
+                  <li>Configure activity properties in the right panel</li>
+                  <li>Press <strong>F5</strong> to run your process</li>
+                </ol>
+              </div>
+              <p className="text-xs text-slate-400">
+                Version 0.3.0 | Built on Robot Framework
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 };
