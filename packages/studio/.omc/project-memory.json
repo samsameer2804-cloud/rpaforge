@@ -1,0 +1,240 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1777372362309,
+  "projectRoot": "D:\\Repo\\rpaforge\\packages\\studio",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "tsconfig.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "react",
+        "version": "19.2.5",
+        "category": "frontend"
+      },
+      {
+        "name": "react-dom",
+        "version": "19.2.5",
+        "category": "frontend"
+      },
+      {
+        "name": "@playwright/test",
+        "version": "1.51.0",
+        "category": "testing"
+      },
+      {
+        "name": "rollup",
+        "version": "4.37.0",
+        "category": "build"
+      },
+      {
+        "name": "svelte",
+        "version": "5.31.0",
+        "category": "frontend"
+      },
+      {
+        "name": "vite",
+        "version": "6.3.0",
+        "category": "build"
+      },
+      {
+        "name": "vitest",
+        "version": "3.1.1",
+        "category": "testing"
+      }
+    ],
+    "packageManager": "npm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "cd \"D:/Repo/rpaforge/packages/studio\" && npx tsc --noEmit 2>&1 && npm run lint 2>&1 | tail -8",
+    "testCommand": "npm test",
+    "lintCommand": "npm run lint",
+    "devCommand": "npm run dev",
+    "scripts": {
+      "dev": "vite",
+      "build": "vite build && electron-builder",
+      "preview": "vite preview",
+      "lint": "eslint src",
+      "lint:fix": "eslint src --fix",
+      "test": "vitest",
+      "test:coverage": "vitest --coverage",
+      "electron:dev": "vite",
+      "electron:build": "vite build && electron-builder"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": "type-based"
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "src"
+    ],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "dist": {
+      "path": "dist",
+      "purpose": "Distribution/build output",
+      "fileCount": 1,
+      "lastAccessed": 1777372362230,
+      "keyFiles": [
+        "index.html"
+      ]
+    },
+    "dist-electron": {
+      "path": "dist-electron",
+      "purpose": null,
+      "fileCount": 4,
+      "lastAccessed": 1777372362231,
+      "keyFiles": [
+        "main.js",
+        "preload.js",
+        "python-bridge.js",
+        "vite.config.js"
+      ]
+    },
+    "electron": {
+      "path": "electron",
+      "purpose": null,
+      "fileCount": 6,
+      "lastAccessed": 1777372362262,
+      "keyFiles": [
+        "ipc-validator.ts",
+        "main.ts",
+        "preload.ts",
+        "python-bridge.test.ts",
+        "python-bridge.ts"
+      ]
+    },
+    "release": {
+      "path": "release",
+      "purpose": null,
+      "fileCount": 3,
+      "lastAccessed": 1777372362262,
+      "keyFiles": [
+        "builder-debug.yml",
+        "builder-effective-config.yaml",
+        "RPAForge Studio-0.1.0-dev.1.AppImage"
+      ]
+    },
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 5,
+      "lastAccessed": 1777372362263,
+      "keyFiles": [
+        "App.tsx",
+        "index.css",
+        "main.tsx",
+        "setupTests.ts",
+        "vite-env.d.ts"
+      ]
+    },
+    "templates": {
+      "path": "templates",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1777372362263,
+      "keyFiles": []
+    },
+    "dist\\assets": {
+      "path": "dist\\assets",
+      "purpose": "Static assets",
+      "fileCount": 94,
+      "lastAccessed": 1777372362264,
+      "keyFiles": [
+        "arc-D-OeUNH_.js",
+        "architecture-YZFGNWBL-Cmfxtx0b.js",
+        "architectureDiagram-Q4EWVU46-CtM8d_il.js"
+      ]
+    },
+    "dist-electron\\src": {
+      "path": "dist-electron\\src",
+      "purpose": "Source code",
+      "fileCount": 0,
+      "lastAccessed": 1777372362265,
+      "keyFiles": []
+    },
+    "src\\components": {
+      "path": "src\\components",
+      "purpose": "UI components",
+      "fileCount": 0,
+      "lastAccessed": 1777372362266,
+      "keyFiles": []
+    },
+    "src\\config": {
+      "path": "src\\config",
+      "purpose": "Configuration files",
+      "fileCount": 2,
+      "lastAccessed": 1777372362266,
+      "keyFiles": [
+        "app.config.test.ts",
+        "app.config.ts"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "src\\components\\Designer\\ProcessCanvas.tsx",
+      "accessCount": 5,
+      "lastAccessed": 1777373307224,
+      "type": "file"
+    },
+    {
+      "path": "src\\components\\Designer\\Edges\\StepEdge.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1777373309628,
+      "type": "file"
+    },
+    {
+      "path": "src\\utils\\edgeIntersections.ts",
+      "accessCount": 3,
+      "lastAccessed": 1777373232926,
+      "type": "file"
+    },
+    {
+      "path": "src\\components\\Designer\\Edges\\SmoothstepEdge.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1777373264907,
+      "type": "file"
+    },
+    {
+      "path": "src\\components\\Designer\\Edges\\index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1777373007933,
+      "type": "file"
+    },
+    {
+      "path": "src\\components\\Designer\\Blocks\\BaseBlock.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777373008683,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

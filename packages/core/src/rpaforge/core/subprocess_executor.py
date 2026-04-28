@@ -89,44 +89,35 @@ class SubprocessExecutor:
 
         timeout_seconds = timeout_ms / 1000.0
 
-        # Create a multiprocessing Pool
-        # Using 'fork' start method on Unix for better performance
-        if sys.platform.startswith("win"):
-            # On Windows, use 'spawn' (default)
-            ctx = multiprocessing.get_context("spawn")
-        else:
-            # On Unix, try 'fork' for better performance
-            try:
-                ctx = multiprocessing.get_context("fork")
-            except RuntimeError:
-                ctx = multiprocessing.get_context("spawn")
-
         with self._pool_lock:
-            if self._pool is not None:
-                self._pool.terminate()
-                self._pool.join()
-                self._pool = None
-            self._pool = ctx.Pool(processes=1)
+            if self._pool is None:
+                # Using 'fork' start method on Unix for better performance
+                if sys.platform.startswith("win"):
+                    ctx = multiprocessing.get_context("spawn")
+                else:
+                    try:
+                        ctx = multiprocessing.get_context("fork")
+                    except RuntimeError:
+                        ctx = multiprocessing.get_context("spawn")
+                self._pool = ctx.Pool(processes=self._max_workers)
+            pool = self._pool
+
+        async_result = pool.apply_async(
+            self._execute_in_subprocess,
+            (library_path, activity_name, args, kwargs),
+        )
 
         try:
-            async_result = self._pool.apply_async(
-                self._execute_in_subprocess,
-                (library_path, activity_name, args, kwargs),
-            )
-
-            try:
-                result = async_result.get(timeout=timeout_seconds)
-            except multiprocessing.TimeoutError as err:
-                self._kill_child_processes()
-                raise TimeoutError(timeout_ms) from err
-
-            return result
-        finally:
+            return async_result.get(timeout=timeout_seconds)
+        except multiprocessing.TimeoutError as err:
+            self._kill_child_processes()
+            # Pool workers may be in a bad state after timeout; replace the pool.
             with self._pool_lock:
-                if self._pool is not None:
+                if self._pool is pool:
                     self._pool.terminate()
                     self._pool.join()
                     self._pool = None
+            raise TimeoutError(timeout_ms) from err
 
     def _kill_child_processes(self) -> None:
         try:

@@ -20,6 +20,7 @@ interface ExpressionEditorProps {
   validate?: boolean;
   required?: boolean;
   onValidationChange?: (result: ValidationResult) => void;
+  title?: string;
 }
 
 function validateExpression(
@@ -102,6 +103,7 @@ const ExpressionEditor: React.FC<ExpressionEditorProps> = ({
   validate = true,
   required = false,
   onValidationChange,
+  title,
 }) => {
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const [autocompletePosition, setAutocompletePosition] = useState({ top: 0, left: 0 });
@@ -302,6 +304,7 @@ const ExpressionEditor: React.FC<ExpressionEditorProps> = ({
             placeholder={placeholder}
             disabled={disabled}
             rows={rows}
+            title={title}
             className={`w-full px-3 py-2 border rounded bg-white dark:bg-slate-700 text-sm font-mono focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50 resize-y ${getBorderColor()}`}
           />
           {validate && value.trim() && (

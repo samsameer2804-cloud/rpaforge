@@ -145,6 +145,7 @@ function BaseBlockComponent({
               type="target"
               position={Position.Left}
               id={port.id}
+              title={port.label}
               className="w-3 h-3 border-2 border-white"
               style={{
                 top: `${HEADER_HEIGHT + contentHeight / 2}px`,
@@ -159,6 +160,7 @@ function BaseBlockComponent({
               type="source"
               position={Position.Right}
               id={port.id}
+              title={port.label}
               className="w-3 h-3 border-2 border-white"
               style={{
                 top: `${getOutputHandleTop(index)}px`,

@@ -94,6 +94,7 @@ const ActivityParamEditor: React.FC<ActivityParamEditorProps> = ({
           variables={variables}
           onCreateNew={onCreateNew}
           placeholder={param.description || `Select ${param.label.toLowerCase()}...`}
+          title='Use ${varName} syntax. Example: ${myVariable}'
         />
         {param.description && (
           <div className="mt-1 text-xs text-slate-500">{param.description}</div>
@@ -129,6 +130,7 @@ const ActivityParamEditor: React.FC<ActivityParamEditorProps> = ({
           onCreateNew={onCreateNew}
           placeholder={param.description || `Enter ${param.label.toLowerCase()}...`}
           rows={2}
+          title='Use ${varName} syntax. Example: ${myVariable}'
         />
       </div>
     );
@@ -225,6 +227,7 @@ const ActivityParamEditor: React.FC<ActivityParamEditorProps> = ({
           className="flex-1 rounded border px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-700"
           value={stringifyValue(value)}
           onChange={(event) => onChange(param.name, event.target.value)}
+          title='Use ${varName} syntax. Example: ${myVariable}'
         />
         <button
           type="button"

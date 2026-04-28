@@ -13,14 +13,15 @@ import { useEngine } from '../../hooks/useEngine';
 import { useAutoSave } from '../../hooks/useAutoSave';
 import { validateProjectDiagramState } from '../../utils/diagramValidation';
 import { config } from '../../config/app.config';
-import Toolbar from './Toolbar';
-import SidebarLeft from './SidebarLeft';
-import SidebarRight from './SidebarRight';
+import MainToolbar from './MainToolbar';
+import ActivityPaletteSidebar from './ActivityPaletteSidebar';
+import PropertiesSidebar from './PropertiesSidebar';
 import MainContent from './MainContent';
 import StatusBar from './StatusBar';
 import CodeModal from './CodeModal';
 import { LoadingOverlay } from '../Common/Loading';
 import { MermaidPreview } from '../Common/MermaidPreview';
+import HelpDialog from '../Common/HelpDialog';
 
 type Tab = 'designer' | 'debugger' | 'console';
 
@@ -31,6 +32,7 @@ const Layout: React.FC = () => {
   const [generatedFiles, setGeneratedFiles] = useState<Record<string, string> | null>(null);
   const [showCodeModal, setShowCodeModal] = useState(false);
   const [showMermaidPreview, setShowMermaidPreview] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const initialLoadComplete = useRef(false);
   const prevDiagramRef = useRef<string>('');
 
@@ -73,6 +75,22 @@ const Layout: React.FC = () => {
     enabled: config.autosave.enabled,
     intervalMs: config.autosave.intervalMs,
   });
+
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (!isDirty) return;
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isDirty]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'F1') { e.preventDefault(); setShowHelp(true); } };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   useEffect(() => {
     if (!isConnected) {
@@ -161,6 +179,11 @@ const Layout: React.FC = () => {
       }
       
       if (metadata && nodes.length > 0) {
+        const hasEndBlock = nodes.some(n => n.data?.blockData?.type === 'end');
+        if (!hasEndBlock) {
+          toast.warning('Process has no End block — execution may not terminate cleanly');
+        }
+
         const allNodeIds = new Set(nodes.map(n => n.id));
         await syncBreakpoints(allNodeIds);
         
@@ -347,7 +370,7 @@ const Layout: React.FC = () => {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
-      <Toolbar
+      <MainToolbar
         activeTab={activeTab}
         onTabChange={setActiveTab}
         isConnected={isConnected}
@@ -373,7 +396,7 @@ const Layout: React.FC = () => {
       />
 
       <div className="flex-1 flex overflow-hidden">
-        <SidebarLeft
+        <ActivityPaletteSidebar
           activeTab={activeTab}
           isPaused={isPaused}
           isStepLoading={isStepLoading}
@@ -384,7 +407,7 @@ const Layout: React.FC = () => {
 
         <MainContent activeTab={activeTab} showConsole={showConsole} />
 
-        <SidebarRight activeTab={activeTab} />
+        <PropertiesSidebar activeTab={activeTab} />
       </div>
 
       <StatusBar
@@ -416,6 +439,8 @@ const Layout: React.FC = () => {
       />
 
       <LoadingOverlay isVisible={loading.execute} message={loadingMessage || 'Executing...'} progress={executionProgress > 0 ? executionProgress : undefined} />
+
+      <HelpDialog open={showHelp} onClose={() => setShowHelp(false)} />
     </div>
   );
 };

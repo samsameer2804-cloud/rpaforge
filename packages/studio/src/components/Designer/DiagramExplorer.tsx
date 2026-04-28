@@ -1,4 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
+import ConfirmDialog from '../Common/ConfirmDialog';
 import {
   FiFile,
   FiFileText,
@@ -74,6 +76,7 @@ const DiagramExplorer: React.FC<DiagramExplorerProps> = ({
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const [settingsDiagramId, setSettingsDiagramId] = useState<string | null>(null);
   const [fsError, setFsError] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<TreeNode | null>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
 
   const tree = useMemo((): TreeNode[] => {
@@ -343,17 +346,27 @@ const DiagramExplorer: React.FC<DiagramExplorerProps> = ({
     setContextMenu(null);
   };
 
-  const handleDelete = async (node: TreeNode) => {
+  const handleDelete = (node: TreeNode) => {
+    setContextMenu(null);
+    setDeleteConfirm(node);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirm) return;
+    const node = deleteConfirm;
+    setDeleteConfirm(null);
     setFsError(null);
     try {
       await deleteFile(node.relativePath);
       if (node.type === 'diagram') {
         removeDiagram(node.id);
       }
+      toast.success(`Deleted "${node.name}"`);
     } catch (err) {
-      setFsError(`Failed to delete "${node.name}": ${err instanceof Error ? err.message : String(err)}`);
+      const message = err instanceof Error ? err.message : String(err);
+      setFsError(`Failed to delete "${node.name}": ${message}`);
+      toast.error(`Failed to delete: ${message}`);
     }
-    setContextMenu(null);
   };
 
   const handleDuplicate = async (node: TreeNode) => {
@@ -374,8 +387,11 @@ const DiagramExplorer: React.FC<DiagramExplorerProps> = ({
           path: newRelativePath,
           folder: node.diagram.folder,
         });
+        toast.success(`Duplicated "${node.name}"`);
       } catch (err) {
-        setFsError(`Failed to duplicate "${node.name}": ${err instanceof Error ? err.message : String(err)}`);
+        const message = err instanceof Error ? err.message : String(err);
+        setFsError(`Failed to duplicate "${node.name}": ${message}`);
+        toast.error(`Failed to duplicate: ${message}`);
       }
     }
     setContextMenu(null);
@@ -889,6 +905,16 @@ const DiagramExplorer: React.FC<DiagramExplorerProps> = ({
         isOpen={!!settingsDiagramId}
         diagramId={settingsDiagramId}
         onClose={() => setSettingsDiagramId(null)}
+      />
+
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        title={`Delete "${deleteConfirm?.name ?? ''}"`}
+        message="This action cannot be undone. Are you sure you want to delete this item?"
+        confirmLabel="Delete"
+        destructive
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteConfirm(null)}
       />
     </div>
   );

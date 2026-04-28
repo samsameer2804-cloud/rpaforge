@@ -31,7 +31,7 @@ vi.mock('../../hooks/useAutoSave', () => ({
   useAutoSave: () => undefined,
 }));
 
-vi.mock('./Toolbar', () => ({
+vi.mock('./MainToolbar', () => ({
   default: ({
     onRun,
     onExportCode,
@@ -46,12 +46,12 @@ vi.mock('./Toolbar', () => ({
   ),
 }));
 
-vi.mock('./SidebarLeft', () => ({
-  default: () => <div>SidebarLeft</div>,
+vi.mock('./ActivityPaletteSidebar', () => ({
+  default: () => <div>ActivityPaletteSidebar</div>,
 }));
 
-vi.mock('./SidebarRight', () => ({
-  default: () => <div>SidebarRight</div>,
+vi.mock('./PropertiesSidebar', () => ({
+  default: () => <div>PropertiesSidebar</div>,
 }));
 
 vi.mock('./MainContent', () => ({

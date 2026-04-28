@@ -87,7 +87,6 @@ export const useFileOperations = (): UseFileOperationsResult => {
     projectPath,
     loadProject: loadProjectFromFolder,
     writeFile,
-    createFolder,
   } = useProjectFsStore();
 
   const loadProcess = useCallback((meta: ProcessMetadata, newNodes: ProcessNode[], newEdges: Edge[]): boolean => {
@@ -551,6 +550,7 @@ export const useFileOperations = (): UseFileOperationsResult => {
       const sanitizedName = name.replace(/[^a-zA-Z0-9_-]/g, '_');
       const projectFolder = `${folderPath}/${sanitizedName}`;
       
+      await fileSystem.setProjectRoot(projectFolder);
       await fileSystem.createDir(projectFolder);
 
       const template = templateId ? getProjectTemplateById(templateId) : null;
@@ -729,7 +729,7 @@ export const useFileOperations = (): UseFileOperationsResult => {
       setIsLoading(false);
       return false;
     }
-  }, [createFolder, loadProjectFromFolder, loadProject, loadProcess, setCurrentFile]);
+  }, [loadProjectFromFolder, loadProject, loadProcess, setCurrentFile]);
 
   const newProcess = useCallback((name: string, templateId?: string) => {
     const template = templateId ? getProcessTemplateById(templateId) : null;

@@ -4,6 +4,7 @@ import type { ExecutionState, ExecutionSpeed } from '../../stores/processStore';
 import type { ProcessMetadata } from '../../stores/processStore';
 import type { Capabilities } from '../../types/engine';
 import type { BridgeState } from '../../types/events';
+import { useFileStore } from '../../stores/fileStore';
 
 const TIPS = [
   'Press Ctrl+Space to quick-add activities',
@@ -38,6 +39,9 @@ const StatusBar: React.FC<StatusBarProps> = ({
   showConsole,
   onToggleConsole,
 }) => {
+  const isDirty = useFileStore((state) => state.isDirty);
+  const lastSaved = useFileStore((state) => state.lastSaved);
+
   const [currentTipIndex, setCurrentTipIndex] = useState(0);
   const [showTip, setShowTip] = useState(false);
 
@@ -53,6 +57,20 @@ const StatusBar: React.FC<StatusBarProps> = ({
     }, 5000);
     return () => clearTimeout(timer);
   }, [currentTipIndex]);
+
+  const savedTime = lastSaved
+    ? new Date(lastSaved).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : null;
+
+  const getSaveIndicator = () => {
+    if (isDirty) {
+      return <span className="text-yellow-400">Unsaved changes</span>;
+    }
+    if (savedTime) {
+      return <span className="text-green-400">Saved {savedTime}</span>;
+    }
+    return null;
+  };
 
   const runtimeSummary = capabilities
     ? `Engine ${capabilities.version} | ${
@@ -113,6 +131,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
         )}
       </div>
       <div className="flex items-center gap-4">
+        {getSaveIndicator()}
         {activeTab === 'designer' && (
           <button
             className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"

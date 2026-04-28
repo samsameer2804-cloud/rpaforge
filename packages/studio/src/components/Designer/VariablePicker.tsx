@@ -15,6 +15,7 @@ interface VariablePickerProps {
   onCreateNew?: () => void;
   placeholder?: string;
   disabled?: boolean;
+  title?: string;
 }
 
 const VariablePicker: React.FC<VariablePickerProps> = ({
@@ -24,6 +25,7 @@ const VariablePicker: React.FC<VariablePickerProps> = ({
   onCreateNew,
   placeholder = 'Select variable...',
   disabled = false,
+  title,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -151,6 +153,7 @@ const VariablePicker: React.FC<VariablePickerProps> = ({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
+          title={title}
           className="w-full px-3 py-2 pr-8 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-sm font-mono focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50"
         />
         <button

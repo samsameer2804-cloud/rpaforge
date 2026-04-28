@@ -1,0 +1,435 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1777388556985,
+  "projectRoot": "D:\\Repo\\rpaforge",
+  "techStack": {
+    "languages": [
+      {
+        "name": "Python",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "pyproject.toml",
+          "requirements.txt"
+        ]
+      },
+      {
+        "name": "C/C++",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "Makefile"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "pytest",
+        "version": null,
+        "category": "testing"
+      }
+    ],
+    "packageManager": "npm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "make build",
+    "testCommand": "cd \"D:/Repo/rpaforge/packages/studio\" && npm test -- --run 2>&1 | tail -15",
+    "lintCommand": "ruff check",
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "docs"
+    ],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 2,
+      "lastAccessed": 1777388556872,
+      "keyFiles": [
+        "DOCUMENTATION_UPDATE_SUMMARY.md",
+        "index.md"
+      ]
+    },
+    "packages": {
+      "path": "packages",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1777388556875,
+      "keyFiles": []
+    },
+    "plugins": {
+      "path": "plugins",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1777388556876,
+      "keyFiles": []
+    },
+    "rpaforge.egg-info": {
+      "path": "rpaforge.egg-info",
+      "purpose": null,
+      "fileCount": 6,
+      "lastAccessed": 1777388556878,
+      "keyFiles": [
+        "dependency_links.txt",
+        "entry_points.txt",
+        "PKG-INFO",
+        "requires.txt",
+        "SOURCES.txt"
+      ]
+    },
+    "site": {
+      "path": "site",
+      "purpose": null,
+      "fileCount": 4,
+      "lastAccessed": 1777388556886,
+      "keyFiles": [
+        "404.html",
+        "index.html",
+        "sitemap.xml",
+        "sitemap.xml.gz"
+      ]
+    },
+    "tools": {
+      "path": "tools",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1777388556916,
+      "keyFiles": []
+    },
+    "docs\\api": {
+      "path": "docs\\api",
+      "purpose": "API routes",
+      "fileCount": 0,
+      "lastAccessed": 1777388556919,
+      "keyFiles": []
+    },
+    "site\\assets": {
+      "path": "site\\assets",
+      "purpose": "Static assets",
+      "fileCount": 0,
+      "lastAccessed": 1777388556927,
+      "keyFiles": []
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "packages\\studio\\src\\components\\Debugger\\VariablePanel.tsx",
+      "accessCount": 18,
+      "lastAccessed": 1777409992882,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Layout\\Layout.tsx",
+      "accessCount": 17,
+      "lastAccessed": 1777410691006,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Designer\\ProcessCanvas.tsx",
+      "accessCount": 17,
+      "lastAccessed": 1777410729410,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Designer\\DiagramExplorer.tsx",
+      "accessCount": 14,
+      "lastAccessed": 1777409920011,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Designer\\CanvasToolbar.tsx",
+      "accessCount": 10,
+      "lastAccessed": 1777390079758,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Common\\FileMenu.tsx",
+      "accessCount": 10,
+      "lastAccessed": 1777409928754,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src",
+      "accessCount": 10,
+      "lastAccessed": 1777410676411,
+      "type": "directory"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Layout\\CodeModal.tsx",
+      "accessCount": 9,
+      "lastAccessed": 1777410382516,
+      "type": "file"
+    },
+    {
+      "path": "",
+      "accessCount": 8,
+      "lastAccessed": 1777410690007,
+      "type": "directory"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Common\\index.ts",
+      "accessCount": 6,
+      "lastAccessed": 1777410673269,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Layout\\StatusBar.tsx",
+      "accessCount": 5,
+      "lastAccessed": 1777410408460,
+      "type": "file"
+    },
+    {
+      "path": "packages\\core\\src\\rpaforge\\core\\executor.py",
+      "accessCount": 4,
+      "lastAccessed": 1777388754450,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\stores\\processStore.ts",
+      "accessCount": 4,
+      "lastAccessed": 1777388765038,
+      "type": "file"
+    },
+    {
+      "path": "packages\\core\\src\\rpaforge\\core\\subprocess_executor.py",
+      "accessCount": 4,
+      "lastAccessed": 1777389462834,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Designer\\PropertyPanel\\PropertyPanel.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1777390068618,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Layout\\Toolbar.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1777410165543,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Debugger\\CallStackPanel.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1777410227350,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Designer\\PropertyPanel\\editors\\ActivityParamEditor.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1777410721414,
+      "type": "file"
+    },
+    {
+      "path": "packages\\core\\tests\\test_subprocess_executor.py",
+      "accessCount": 3,
+      "lastAccessed": 1777389568018,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Layout\\CodeModal.test.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1777410461848,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\hooks\\useFileOperations.ts",
+      "accessCount": 3,
+      "lastAccessed": 1777410692768,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\hooks\\useKeyboardShortcuts.ts",
+      "accessCount": 3,
+      "lastAccessed": 1777410714670,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\electron\\ipc-validator.ts",
+      "accessCount": 2,
+      "lastAccessed": 1777389537716,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Common\\Loading.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1777389546793,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Common\\LiveRegion.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1777389547511,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\hooks\\useFocusTrap.ts",
+      "accessCount": 2,
+      "lastAccessed": 1777390008957,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\stores\\fileStore.ts",
+      "accessCount": 2,
+      "lastAccessed": 1777410181233,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\types\\blocks.ts",
+      "accessCount": 2,
+      "lastAccessed": 1777410186146,
+      "type": "directory"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Designer\\Blocks\\BaseBlock.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1777410203241,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Layout\\index.ts",
+      "accessCount": 2,
+      "lastAccessed": 1777410278031,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Layout\\Layout.test.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1777410284387,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Common\\ErrorBoundary.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777389521327,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Common\\ConfirmDialog.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777389533312,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\hooks\\useEngine.ts",
+      "accessCount": 1,
+      "lastAccessed": 1777389958047,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\stores\\historyStore.ts",
+      "accessCount": 1,
+      "lastAccessed": 1777389964299,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\types",
+      "accessCount": 1,
+      "lastAccessed": 1777389982356,
+      "type": "directory"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Debugger\\ConsoleOutput.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777409891331,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Layout\\SidebarLeft.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777410165986,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Layout\\SidebarRight.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777410166523,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Designer\\Blocks\\IfBlock.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777410168489,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Designer\\Blocks\\TryCatchBlock.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777410168899,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Designer\\Blocks\\WhileBlock.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777410169420,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Designer\\Blocks\\ForEachBlock.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777410170872,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\types\\engine.ts",
+      "accessCount": 1,
+      "lastAccessed": 1777410176610,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\hooks\\useAutoSave.ts",
+      "accessCount": 1,
+      "lastAccessed": 1777410180114,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Common\\Button.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777410194377,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Layout\\MainToolbar.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777410235698,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Layout\\ActivityPaletteSidebar.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777410249745,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Layout\\PropertiesSidebar.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777410253218,
+      "type": "file"
+    },
+    {
+      "path": "packages\\studio\\src\\components\\Designer\\PropertyPanel",
+      "accessCount": 1,
+      "lastAccessed": 1777410648463,
+      "type": "directory"
+    }
+  ],
+  "userDirectives": []
+}

@@ -202,6 +202,7 @@ export const useProjectFsStore = create<ProjectFsState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
+      await fs.setProjectRoot(projectPath);
       const exists = await fs.pathExists(projectPath);
       if (!exists) {
         set({ error: 'Project path does not exist', isLoading: false });

@@ -453,8 +453,8 @@ const FileMenu: React.FC = () => {
           disabled={isLoading}
           title="Open File"
         >
-          <FiFolder className="w-4 h-4" />
-          Open File
+          {isLoading ? <FiRefreshCw className="w-4 h-4 animate-spin" /> : <FiFolder className="w-4 h-4" />}
+          {isLoading ? 'Opening...' : 'Open File'}
         </button>
 
         <button
@@ -463,8 +463,8 @@ const FileMenu: React.FC = () => {
           disabled={isLoading}
           title="Open Project Folder"
         >
-          <FiFolder className="w-4 h-4" />
-          Open Folder
+          {isLoading ? <FiRefreshCw className="w-4 h-4 animate-spin" /> : <FiFolder className="w-4 h-4" />}
+          {isLoading ? 'Opening...' : 'Open Folder'}
         </button>
 
         <input
@@ -481,8 +481,8 @@ const FileMenu: React.FC = () => {
           disabled={isSaving}
           title="Save Project"
         >
-          <FiSave className="w-4 h-4" />
-          Save
+          {isSaving ? <FiRefreshCw className="w-4 h-4 animate-spin" /> : <FiSave className="w-4 h-4" />}
+          {isSaving ? 'Saving...' : 'Save'}
         </button>
 
         {!projectPath && (
@@ -492,8 +492,8 @@ const FileMenu: React.FC = () => {
             disabled={isSaving}
             title="Save Project As"
           >
-            <FiFile className="w-4 h-4" />
-            Save As
+            {isSaving ? <FiRefreshCw className="w-4 h-4 animate-spin" /> : <FiFile className="w-4 h-4" />}
+            {isSaving ? 'Saving...' : 'Save As'}
           </button>
         )}
 

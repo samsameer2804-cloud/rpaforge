@@ -19,10 +19,14 @@ describe('CodeModal', () => {
       />
     );
 
-    expect(container.querySelector('pre')?.textContent).toContain('*** Tasks ***\nMain Process');
+    const codeBlocks = container.querySelectorAll('code');
+    const mainCode = Array.from(codeBlocks).find((el) => el.textContent?.includes('*** Tasks ***'));
+    expect(mainCode).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'processes/auth/login.flow.robot' }));
 
-    expect(container.querySelector('pre')?.textContent).toContain('*** Keywords ***\nLogin Flow');
+    const codeBlocksAfter = container.querySelectorAll('code');
+    const authCode = Array.from(codeBlocksAfter).find((el) => el.textContent?.includes('*** Keywords ***'));
+    expect(authCode).toBeTruthy();
   });
 });

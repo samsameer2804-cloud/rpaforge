@@ -56,23 +56,29 @@ class TestSubprocessExecutorTimeout:
             mod.SubprocessExecutor._execute_in_subprocess = original
             ex.close()
 
-    def test_pool_is_none_after_timeout(self):
+    def test_pool_is_reset_after_timeout(self):
+        """After a timeout the stale pool is terminated and set to None."""
+        import multiprocessing
+        import unittest.mock as mock
+
         ex = SubprocessExecutor()
-        import rpaforge.core.subprocess_executor as mod
 
-        def slow_worker(_self, _library_path, _activity_name, _args, _kwargs):
-            time.sleep(5)
-            return "never"
+        # Build a fake pool whose apply_async().get() raises TimeoutError.
+        fake_async_result = mock.MagicMock()
+        fake_async_result.get.side_effect = multiprocessing.TimeoutError()
 
-        original = mod.SubprocessExecutor._execute_in_subprocess
-        mod.SubprocessExecutor._execute_in_subprocess = slow_worker
-        try:
-            with pytest.raises((TimeoutError, Exception)):
-                ex.execute_with_timeout("fake.lib", "act", timeout_ms=50)
-        finally:
-            mod.SubprocessExecutor._execute_in_subprocess = original
+        fake_pool = mock.MagicMock()
+        fake_pool.apply_async.return_value = fake_async_result
 
+        ex._pool = fake_pool
+
+        with pytest.raises(TimeoutError):
+            ex.execute_with_timeout("fake.lib", "act", timeout_ms=50)
+
+        # Pool must be torn down and set to None after a timeout.
         assert ex._pool is None
+        fake_pool.terminate.assert_called_once()
+        fake_pool.join.assert_called_once()
 
 
 class TestSubprocessExecutorConcurrency:

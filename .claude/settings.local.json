@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh issue *)",
+      "Bash(xargs grep *)",
+      "mcp__plugin_oh-my-claudecode_t__state_write",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({k:v for k,v in d.items\\(\\) if 'team' in k.lower\\(\\) or 'experiment' in k.lower\\(\\) or 'agent' in k.lower\\(\\)}, indent=2\\)\\)\")",
+      "mcp__plugin_oh-my-claudecode_t__state_clear",
+      "Bash(python -c \"import sys; sys.exit\\(0\\)\")",
+      "Bash(python *)",
+      "Bash(ruff format *)",
+      "Bash(ruff check *)",
+      "Bash(gh pr *)",
+      "Bash(gh run *)",
+      "Bash(gh api *)",
+      "Bash(gh label *)",
+      "Bash(gh repo *)",
+      "Bash(npx tsc *)",
+      "Bash(pytest *)",
+      "Bash(npm test *)",
+      "Bash(npm install *)"
+    ]
+  }
+}

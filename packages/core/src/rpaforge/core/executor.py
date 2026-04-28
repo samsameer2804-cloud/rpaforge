@@ -223,6 +223,9 @@ class ProcessExecutor:
         self._listeners: list[Callable] = []
         self._context: ExecutionContext | None = None
         self._lock = threading.Lock()
+        self._subprocess_executor: SubprocessExecutor | None = (
+            SubprocessExecutor() if _USE_SUBPROCESS and SubprocessExecutor is not None else None
+        )
 
     def register_library(self, name: str, instance: Any) -> None:
         self._libraries[name] = instance
@@ -574,19 +577,15 @@ class ProcessExecutor:
             return method(*args, **kwargs)
 
         # Use subprocess executor if available for safe timeout handling
-        if _USE_SUBPROCESS and SubprocessExecutor is not None:
+        if self._subprocess_executor is not None:
             lib_path = f"rpaforge_libraries.{library}"
-            executor = SubprocessExecutor()
-            try:
-                return executor.execute_with_timeout(
-                    lib_path,
-                    activity_name,
-                    *args,
-                    timeout_ms=timeout_ms,
-                    **kwargs,
-                )
-            finally:
-                executor.close()
+            return self._subprocess_executor.execute_with_timeout(
+                lib_path,
+                activity_name,
+                *args,
+                timeout_ms=timeout_ms,
+                **kwargs,
+            )
 
         def _call(*a: Any) -> Any:
             return method(*a[: len(args)], **kwargs)
@@ -603,6 +602,18 @@ class ProcessExecutor:
     @property
     def context(self) -> ExecutionContext | None:
         return self._context
+
+    def close(self) -> None:
+        """Close the executor and release subprocess pool resources."""
+        if self._subprocess_executor is not None:
+            self._subprocess_executor.close()
+            self._subprocess_executor = None
+
+    def __enter__(self) -> ProcessExecutor:
+        return self
+
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        self.close()
 
     def get_variables(self) -> dict[str, Any]:
         if self._context:

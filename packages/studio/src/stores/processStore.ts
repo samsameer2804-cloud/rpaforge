@@ -7,7 +7,7 @@
 
 import type { Edge, Node } from '@reactflow/core';
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { Activity } from '../types/engine';
 import { createActivityBlockData, createDefaultBlockData, type BlockData } from '../types/blocks';
 import {
@@ -141,6 +141,27 @@ interface ProcessState {
   pasteNodes: (offset?: { x: number; y: number }) => void;
   cutSelectedNodes: () => void;
   duplicateSelectedNodes: () => void;
+}
+
+function debouncedStorage(delayMs: number) {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  return createJSONStorage(() => ({
+    getItem: (name: string) => localStorage.getItem(name),
+    setItem: (name: string, value: string) => {
+      if (timer !== null) clearTimeout(timer);
+      timer = setTimeout(() => {
+        localStorage.setItem(name, value);
+        timer = null;
+      }, delayMs);
+    },
+    removeItem: (name: string) => {
+      if (timer !== null) {
+        clearTimeout(timer);
+        timer = null;
+      }
+      localStorage.removeItem(name);
+    },
+  }));
 }
 
 const generateId = generateNodeId;
@@ -668,6 +689,7 @@ export const useProcessStore = create<ProcessState>()(
     }),
     {
       name: 'rpaforge-process',
+      storage: debouncedStorage(500),
       partialize: (state) => ({
         mode: state.mode,
         orchestratorUrl: state.orchestratorUrl,

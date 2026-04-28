@@ -29,6 +29,7 @@ import { useSelectionStore } from '../../stores/selectionStore';
 import { useExecutionStore } from '../../stores/executionStore';
 import { useDebuggerStore } from '../../stores/debuggerStore';
 import { useDiagramStore } from '../../stores/diagramStore';
+import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import CanvasToolbar, { type EdgeTypeOption } from './CanvasToolbar';
 import CanvasContextMenu from './CanvasContextMenu';
 import QuickAddActivity from './QuickAddActivity';
@@ -171,24 +172,37 @@ const ProcessCanvasInner: React.FC = () => {
     setEdges(storeEdges.map(ed => ({ ...ed, type: edgeType })));
   }, [storeEdges, setEdges, edgeType]);
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
-        return;
+  useKeyboardShortcuts({
+    copy: () => {
+      if (selectedNodeId) {
+        copyNodes([selectedNodeId]);
+        toast.success('Node copied');
       }
-
-      const isModKey = event.ctrlKey || event.metaKey;
-
-      if (isModKey && event.key.toLowerCase() === 'c') {
-        event.preventDefault();
-        if (selectedNodeId) {
-          copyNodes([selectedNodeId]);
-          toast.success('Node copied');
+    },
+    paste: () => {
+      const { nodes: newNodes, edges: newEdges } = pasteNodes();
+      if (newNodes.length > 0) {
+        pushHistory(storeNodes, storeEdges);
+        for (const node of newNodes) {
+          addNode(node);
         }
-      } else if (isModKey && event.key.toLowerCase() === 'v') {
-        event.preventDefault();
-        const { nodes: newNodes, edges: newEdges } = pasteNodes();
+        for (const edge of newEdges) {
+          addEdge(edge);
+        }
+        setSelectedNode(newNodes[0].id);
+      }
+    },
+    cut: () => {
+      if (selectedNodeId) {
+        copyNodes([selectedNodeId]);
+        pushHistory(storeNodes, storeEdges);
+        removeNode(selectedNodeId);
+        toast.success('Node cut');
+      }
+    },
+    duplicate: () => {
+      if (selectedNodeId) {
+        const { nodes: newNodes, edges: newEdges } = duplicateNodes([selectedNodeId]);
         if (newNodes.length > 0) {
           pushHistory(storeNodes, storeEdges);
           for (const node of newNodes) {
@@ -198,63 +212,63 @@ const ProcessCanvasInner: React.FC = () => {
             addEdge(edge);
           }
           setSelectedNode(newNodes[0].id);
-        }
-      } else if (isModKey && event.key.toLowerCase() === 'x') {
-        event.preventDefault();
-        if (selectedNodeId) {
-          copyNodes([selectedNodeId]);
-          pushHistory(storeNodes, storeEdges);
-          removeNode(selectedNodeId);
-          toast.success('Node cut');
-        }
-      } else if (isModKey && event.key.toLowerCase() === 'd') {
-        event.preventDefault();
-        if (selectedNodeId) {
-          const { nodes: newNodes, edges: newEdges } = duplicateNodes([selectedNodeId]);
-          if (newNodes.length > 0) {
-            pushHistory(storeNodes, storeEdges);
-            for (const node of newNodes) {
-              addNode(node);
-            }
-            for (const edge of newEdges) {
-              addEdge(edge);
-            }
-            setSelectedNode(newNodes[0].id);
-            toast.success('Node duplicated');
-          }
-        }
-      } else if (isModKey && !event.shiftKey && event.key.toLowerCase() === 'z') {
-        event.preventDefault();
-        const snapshot = undoHistory(storeNodes, storeEdges);
-        if (snapshot) {
-          setNodes(snapshot.nodes);
-          setEdges(snapshot.edges.map(ed => ({ ...ed, type: edgeType })));
-        }
-      } else if (isModKey && (event.key.toLowerCase() === 'y' || (event.shiftKey && event.key.toLowerCase() === 'z'))) {
-        event.preventDefault();
-        const snapshot = redoHistory(storeNodes, storeEdges);
-        if (snapshot) {
-          setNodes(snapshot.nodes);
-          setEdges(snapshot.edges.map(ed => ({ ...ed, type: edgeType })));
-        }
-      } else if (event.key === ' ' && isModKey) {
-        event.preventDefault();
-        const canvasRect = reactFlowWrapper.current?.getBoundingClientRect();
-        if (canvasRect) {
-          setQuickAdd({
-            isOpen: true,
-            position: {
-              x: canvasRect.left + canvasRect.width / 2 - 160,
-              y: canvasRect.top + 100,
-            },
-          });
+          toast.success('Node duplicated');
         }
       }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [selectedNodeId, copyNodes, pasteNodes, duplicateNodes, removeNode, addNode, addEdge, pushHistory, undoHistory, redoHistory, storeNodes, storeEdges, screenToFlowPosition, setSelectedNode, setNodes, setEdges, edgeType]);
+    },
+    undo: () => {
+      const snapshot = undoHistory(storeNodes, storeEdges);
+      if (snapshot) {
+        setNodes(snapshot.nodes);
+        setEdges(snapshot.edges.map(ed => ({ ...ed, type: edgeType })));
+      }
+    },
+    redo: () => {
+      const snapshot = redoHistory(storeNodes, storeEdges);
+      if (snapshot) {
+        setNodes(snapshot.nodes);
+        setEdges(snapshot.edges.map(ed => ({ ...ed, type: edgeType })));
+      }
+    },
+    quickAdd: () => {
+      const canvasRect = reactFlowWrapper.current?.getBoundingClientRect();
+      if (canvasRect) {
+        setQuickAdd({
+          isOpen: true,
+          position: {
+            x: canvasRect.left + canvasRect.width / 2 - 160,
+            y: canvasRect.top + 100,
+          },
+        });
+      }
+    },
+    navNext: () => {
+      if (storeNodes.length === 0) return;
+      const currentIdx = selectedNodeId
+        ? storeNodes.findIndex((n) => n.id === selectedNodeId)
+        : -1;
+      const nextIdx = (currentIdx + 1) % storeNodes.length;
+      setSelectedNode(storeNodes[nextIdx].id);
+    },
+    navPrev: () => {
+      if (storeNodes.length === 0) return;
+      const currentIdx = selectedNodeId
+        ? storeNodes.findIndex((n) => n.id === selectedNodeId)
+        : 0;
+      const prevIdx = (currentIdx - 1 + storeNodes.length) % storeNodes.length;
+      setSelectedNode(storeNodes[prevIdx].id);
+    },
+    navConfirm: () => {
+      if (selectedNodeId) {
+        setSelectedNode(selectedNodeId);
+        const propertiesPanel = document.querySelector('[data-panel="properties"]') as HTMLElement | null;
+        propertiesPanel?.focus();
+      }
+    },
+    navEscape: () => {
+      setSelectedNode(null);
+    },
+  });
 
   const onConnect = useCallback(
     (params: Connection) => {
@@ -372,6 +386,7 @@ const ProcessCanvasInner: React.FC = () => {
             if (added) {
               setSelectedNode(nodeId);
             }
+            setIsDragOver(false);
             return;
           }
         } catch (err) {
@@ -381,6 +396,7 @@ const ProcessCanvasInner: React.FC = () => {
 
       const rawData = event.dataTransfer.getData('application/json');
       if (!rawData) {
+        setIsDragOver(false);
         return;
       }
 
@@ -389,6 +405,7 @@ const ProcessCanvasInner: React.FC = () => {
         dragData = JSON.parse(rawData) as DragData;
       } catch (err) {
         logger.warn('Failed to parse block drag data', err);
+        setIsDragOver(false);
         return;
       }
 
@@ -415,6 +432,7 @@ const ProcessCanvasInner: React.FC = () => {
         if (added) {
           setSelectedNode(nodeId);
         }
+        setIsDragOver(false);
         return;
       }
 
@@ -573,6 +591,19 @@ const ProcessCanvasInner: React.FC = () => {
         />
         <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
       </ReactFlow>
+
+      {nodes.length === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+          <div className="text-center select-none">
+            <div className="w-16 h-16 mx-auto mb-4 text-indigo-400 opacity-40">&#9889;</div>
+            <h3 className="text-lg font-medium text-slate-400 mb-2">Start Building</h3>
+            <p className="text-sm text-slate-500 mb-1">
+              Press <kbd className="px-1.5 py-0.5 bg-slate-700 rounded text-xs font-mono">Ctrl+Space</kbd> to quick-add
+            </p>
+            <p className="text-xs text-slate-600">Or drag activities from the palette &rarr;</p>
+          </div>
+        </div>
+      )}
 
       {isDragOver && (
         <div

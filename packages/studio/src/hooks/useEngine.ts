@@ -319,6 +319,7 @@ export const useEngine = (): UseEngineResult => {
     refreshCapabilities,
     setCallStack,
     setCurrentPosition,
+    setCurrentExecutingNode,
     setExecutionState,
     setProcessConnected,
     setVariables,

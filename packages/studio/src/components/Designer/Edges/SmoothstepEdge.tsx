@@ -2,7 +2,6 @@ import { memo } from 'react';
 import { BaseEdge, EdgeLabelRenderer, type EdgeProps, getSmoothStepPath } from '@reactflow/core';
 import type { ConnectionData } from '../../../types/connections';
 import { CONNECTION_STYLES } from '../../../types/connections';
-
 interface ConnectionDataExt extends ConnectionData {
   bendPoints?: Array<{ x: number; y: number }>;
 }
@@ -33,7 +32,7 @@ function SmoothstepEdgeComponent({
     borderRadius: 16,
   });
 
-  const connectionType = data?.type || 'normal';
+  const connectionType = data?.type ?? 'normal';
   const connectionStyle = CONNECTION_STYLES[connectionType];
 
   return (

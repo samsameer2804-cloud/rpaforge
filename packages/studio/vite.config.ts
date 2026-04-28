@@ -2,13 +2,10 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import electron from 'vite-plugin-electron';
-import renderer from 'vite-plugin-electron-renderer';
 import path from 'node:path';
 
 export default defineConfig({
   plugins: [
-    react(),
-    tailwindcss(),
     electron([
       {
         entry: 'electron/main.ts',
@@ -28,16 +25,14 @@ export default defineConfig({
         },
         vite: {
           build: {
-            outDir: 'dist-electron/electron',
             lib: {
               entry: 'electron/preload.ts',
               formats: ['cjs'],
               fileName: () => 'preload.js',
             },
+            outDir: 'dist-electron/electron',
             rollupOptions: {
-              output: {
-                format: 'cjs',
-              },
+              external: ['electron'],
             },
           },
         },
@@ -48,13 +43,14 @@ export default defineConfig({
           build: {
             outDir: 'dist-electron/electron',
             rollupOptions: {
-              external: ['child_process'],
+              external: ['child_process', 'electron'],
             },
           },
         },
       },
     ]),
-    renderer(),
+    react(),
+    tailwindcss(),
   ],
   resolve: {
     alias: {
@@ -70,5 +66,6 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
+    host: '127.0.0.1',
   },
 });

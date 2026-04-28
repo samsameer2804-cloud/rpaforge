@@ -8,7 +8,6 @@ import CodeToolbar from '../CodeEditor/CodeToolbar';
 import SnippetPanel from '../CodeEditor/SnippetPanel';
 import VariablesPanel from '../CodeEditor/VariablesPanel';
 import { useRPACompletions } from '../CodeEditor/hooks/useRPACompletions';
-import { useRPAHoverDocs } from '../CodeEditor/hooks/useRPAHoverDocs';
 import { useVariableStore } from '../../stores/variableStore';
 import type { Snippet } from '../CodeEditor/data/snippets';
 import type { ValidationError } from '../../types/ipc-contracts';
@@ -101,10 +100,6 @@ const PythonCodeEditor: React.FC<PythonCodeEditorProps> = ({
       return dispose;
     }
   }, [activities, registerCompletions]);
-
-  useEffect(() => {
-    useRPAHoverDocs(editorRef.current, activities);
-  }, [activities]);
 
   useEffect(() => {
     const editor = editorRef.current;

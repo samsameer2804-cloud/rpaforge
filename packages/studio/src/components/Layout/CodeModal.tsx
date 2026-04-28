@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { FiDownload, FiFile, FiCode } from 'react-icons/fi';
+import { FiDownload, FiFile, FiCode, FiCopy, FiCheck } from 'react-icons/fi';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface CodeModalProps {
@@ -24,6 +26,7 @@ const CodeModal: React.FC<CodeModalProps> = ({
   const [selectedFile, setSelectedFile] = useState<string | null>(
     fileEntries[0]?.[0] || null
   );
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     setSelectedFile(fileEntries[0]?.[0] || null);
@@ -36,6 +39,13 @@ const CodeModal: React.FC<CodeModalProps> = ({
   const displayedCode = selectedFile
     ? files?.[selectedFile] || code
     : code;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(displayedCode).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
 
   const lineCount = displayedCode.split('\n').length;
   const fileName = selectedFile || 'process.py';
@@ -97,10 +107,23 @@ const CodeModal: React.FC<CodeModalProps> = ({
             ))}
           </div>
         )}
-        <div className="flex-1 overflow-auto p-4">
-          <pre className="text-sm font-mono bg-slate-100 dark:bg-slate-900 p-4 rounded overflow-x-auto">
+        <div className="flex-1 overflow-auto p-4 relative">
+          <button
+            className="absolute top-6 right-6 z-10 px-2 py-1 text-xs bg-slate-700 text-slate-200 rounded hover:bg-slate-600 flex items-center gap-1"
+            onClick={handleCopy}
+            aria-label="Copy code"
+          >
+            {copied ? <FiCheck className="w-3 h-3" /> : <FiCopy className="w-3 h-3" />}
+            {copied ? 'Copied' : 'Copy'}
+          </button>
+          <SyntaxHighlighter
+            language="python"
+            style={vscDarkPlus}
+            showLineNumbers
+            customStyle={{ margin: 0, borderRadius: '0.5rem' }}
+          >
             {displayedCode}
-          </pre>
+          </SyntaxHighlighter>
         </div>
       </div>
     </div>

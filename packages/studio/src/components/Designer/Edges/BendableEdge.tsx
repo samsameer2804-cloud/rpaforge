@@ -1,4 +1,4 @@
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import { BaseEdge, EdgeLabelRenderer, type EdgeProps, getStraightPath, useReactFlow } from '@reactflow/core';
 import type { ConnectionData } from '../../../types/connections';
 import { CONNECTION_STYLES } from '../../../types/connections';
@@ -27,7 +27,7 @@ function BendableEdgeComponent({
   const { screenToFlowPosition } = useReactFlow();
   const updateEdge = useBlockStore((state) => state.updateEdge);
   
-  const bendPoints = data?.bendPoints || [];
+  const bendPoints = useMemo(() => data?.bendPoints ?? [], [data?.bendPoints]);
 
   const getPath = useCallback(() => {
     if (bendPoints.length === 0) {

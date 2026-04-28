@@ -127,10 +127,35 @@ const VariablePanel: React.FC = () => {
   const [showVariableDialog, setShowVariableDialog] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [showGuide, setShowGuide] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const watchedVars = useMemo(() => {
     return variables.filter((v) => watchedVariables.has(v.name));
   }, [variables, watchedVariables]);
+
+  const filteredVariables = useMemo(() => {
+    if (!searchQuery) return variables;
+    const q = searchQuery.toLowerCase();
+    return variables.filter(
+      (v) => v.name.toLowerCase().includes(q) || String(v.value).toLowerCase().includes(q)
+    );
+  }, [variables, searchQuery]);
+
+  const filteredProcessVariables = useMemo(() => {
+    if (!searchQuery) return processVariables;
+    const q = searchQuery.toLowerCase();
+    return processVariables.filter(
+      (v) => v.name.toLowerCase().includes(q) || String(v.value).toLowerCase().includes(q)
+    );
+  }, [processVariables, searchQuery]);
+
+  const filteredWatchedVars = useMemo(() => {
+    if (!searchQuery) return watchedVars;
+    const q = searchQuery.toLowerCase();
+    return watchedVars.filter(
+      (v) => v.name.toLowerCase().includes(q) || String(v.value).toLowerCase().includes(q)
+    );
+  }, [watchedVars, searchQuery]);
 
   const variableOptions = useMemo(
     () =>
@@ -258,6 +283,16 @@ const VariablePanel: React.FC = () => {
         </div>
       </div>
 
+      <div className="px-3 py-2 border-b border-slate-200 dark:border-slate-700">
+        <input
+          type="text"
+          placeholder="Filter variables..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full px-2 py-1 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded outline-none focus:ring-1 focus:ring-indigo-400 text-slate-700 dark:text-slate-300"
+        />
+      </div>
+
       <div className="flex-1 overflow-y-auto">
         {activeTab === 'variables' ? (
           variables.length === 0 ? (
@@ -272,9 +307,13 @@ const VariablePanel: React.FC = () => {
                 Create process variable
               </button>
             </div>
+          ) : filteredVariables.length === 0 ? (
+            <div className="text-center text-sm text-slate-500 dark:text-slate-400 py-8 px-4">
+              No variables match &quot;{searchQuery}&quot;
+            </div>
           ) : (
             <div className="py-2">
-              {variables.map((variable, index) => (
+              {filteredVariables.map((variable, index) => (
                 <VariableItem
                   key={`${variable.name}-${index}`}
                   variable={variable}
@@ -297,9 +336,13 @@ const VariablePanel: React.FC = () => {
                 Create variable
               </button>
             </div>
+          ) : filteredProcessVariables.length === 0 ? (
+            <div className="text-center text-sm text-slate-500 dark:text-slate-400 py-8 px-4">
+              No variables match &quot;{searchQuery}&quot;
+            </div>
           ) : (
             <div className="py-2">
-              {processVariables.map((variable) => (
+              {filteredProcessVariables.map((variable) => (
                 <div
                   key={variable.id}
                   className="flex items-center gap-2 py-1.5 px-2 hover:bg-slate-50 dark:hover:bg-slate-800 group"
@@ -330,9 +373,13 @@ const VariablePanel: React.FC = () => {
               Click the eye icon on variables to add them to watch
             </div>
           </div>
+        ) : filteredWatchedVars.length === 0 ? (
+          <div className="text-center text-sm text-slate-500 dark:text-slate-400 py-8 px-4">
+            No variables match &quot;{searchQuery}&quot;
+          </div>
         ) : (
           <div className="py-2">
-            {watchedVars.map((variable, index) => (
+            {filteredWatchedVars.map((variable, index) => (
               <VariableItem
                 key={`${variable.name}-${index}`}
                 variable={variable}

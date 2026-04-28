@@ -1,12 +1,12 @@
 import { CustomEdge } from './CustomEdge';
 import { SmoothstepEdge } from './SmoothstepEdge';
-import { BendableEdge } from './BendableEdge';
+import { StepEdge } from './StepEdge';
 import type { EdgeTypes } from '@reactflow/core';
 
-export { CustomEdge, SmoothstepEdge, BendableEdge };
+export { CustomEdge, SmoothstepEdge, StepEdge };
 
 export const edgeTypes: EdgeTypes = {
   custom: CustomEdge,
   smoothstep: SmoothstepEdge,
-  bendable: BendableEdge,
+  step: StepEdge,
 };

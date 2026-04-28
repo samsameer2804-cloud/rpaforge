@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { type Edge, type Node } from "@reactflow/core";
+import { type Connection, type Edge, type EdgeChange, type Node, type NodeChange } from "@reactflow/core";
 import { type BlockData } from "../../../types/blocks";
 import type { Activity } from "../../../types/engine";
 import { useBlockStore } from "../../../stores/blockStore";
@@ -24,12 +24,13 @@ export function useCanvasInteractions() {
     nodeId: null,
   });
 
-  const onNodesChange = useCallback((_changes: any[]) => {}, []);
+  const onNodesChange = useCallback((_changes: NodeChange[]) => {}, []);
 
-  const onEdgesChange = useCallback((_changes: any[]) => {}, []);
+  const onEdgesChange = useCallback((_changes: EdgeChange[]) => {}, []);
 
   const onConnect = useCallback(
-    (connection: any) => {
+    (connection: Connection) => {
+      if (!connection.source || !connection.target) return;
       const edge: Edge = {
         id: `${connection.source}_${connection.sourceHandle ?? 'output'}_${connection.target}_${connection.targetHandle ?? 'input'}`,
         source: connection.source,
@@ -121,7 +122,7 @@ export function useCanvasInteractions() {
     event.preventDefault();
   }, []);
 
-  const closeContextMenu = useCallback((..._args: any[]) => {
+  const closeContextMenu = useCallback((..._args: unknown[]) => {
     setContextMenu({ isOpen: false, position: { x: 0, y: 0 }, nodeId: null });
   }, []);
 

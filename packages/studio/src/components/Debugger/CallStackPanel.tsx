@@ -3,6 +3,8 @@ import { FiChevronRight, FiFile } from 'react-icons/fi';
 import { useDebuggerStore } from '../../stores/debuggerStore';
 import type { CallFrame } from '../../types/engine';
 
+type CallFrameWithLocals = CallFrame & { locals?: Record<string, unknown> };
+
 const CallStackPanel: React.FC = () => {
   const { callStack, currentLine } = useDebuggerStore();
 
@@ -26,8 +28,9 @@ const CallStackPanel: React.FC = () => {
       <div className="flex-1 overflow-y-auto">
         <div className="p-2 space-y-1">
           {callStack.map((frame: CallFrame, index: number) => {
-            const isCurrentFrame =
-              currentLine === frame.line;
+            const f = frame as CallFrameWithLocals;
+            const isCurrentFrame = currentLine === frame.line;
+            const localsCount = f.locals ? Object.keys(f.locals).length : null;
 
             return (
               <div
@@ -45,12 +48,22 @@ const CallStackPanel: React.FC = () => {
                     <div className="w-4" />
                   )}
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate">{frame.activity}</div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-slate-400 dark:text-slate-500 flex-shrink-0">
+                        #{index + 1}
+                      </span>
+                      <span className="font-medium truncate">{frame.activity}</span>
+                    </div>
                     <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
                       <FiFile className="w-3 h-3 flex-shrink-0" />
-                      <span className="truncate">
+                      <span className="truncate cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 rounded px-0.5">
                         {frame.library}:{frame.line}
                       </span>
+                      {localsCount !== null && (
+                        <span className="ml-auto flex-shrink-0 text-slate-400 dark:text-slate-500">
+                          {localsCount} vars
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
