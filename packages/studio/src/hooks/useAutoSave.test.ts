@@ -17,6 +17,17 @@ vi.mock('../stores/fileStore', () => ({
   useFileStore: vi.fn(),
 }));
 
+vi.mock('../utils/db', () => ({
+  idb: {
+    autosave: {
+      save: vi.fn().mockResolvedValue(undefined),
+      get: vi.fn().mockResolvedValue(null),
+      clear: vi.fn().mockResolvedValue(undefined),
+      getAll: vi.fn().mockResolvedValue([]),
+    },
+  },
+}));
+
 interface MockMetadata {
   id: string;
   name: string;
