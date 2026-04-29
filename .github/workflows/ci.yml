@@ -17,16 +17,15 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-          allow-python-downloads: true
 
       - name: Set up Python
-        run: uv python install 3.11
+        run: uv python install 3.13
 
       - name: Run Ruff
         run: uvx ruff check packages/ --output-format=github
 
       - name: Check Black formatting
-        run: uvx black --check packages/
+        run: uvx black==25.1.0 --check packages/
 
   test:
     name: Test (Python ${{ matrix.python-version }}, ${{ matrix.os }})
@@ -48,7 +47,6 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-          allow-python-downloads: true
 
       - name: Set up Python ${{ matrix.python-version }}
         run: uv python install ${{ matrix.python-version }}
@@ -112,7 +110,6 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-          allow-python-downloads: true
 
       - name: Set up Python
         run: uv python install 3.11
