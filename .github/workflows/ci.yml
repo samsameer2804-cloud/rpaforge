@@ -22,7 +22,7 @@ jobs:
         run: uv python install 3.11
 
       - name: Install lint tools
-        run: uv pip install ruff black isort mypy
+        run: uv pip install --system ruff black isort mypy
 
       - name: Run Ruff
         run: ruff check packages/ --output-format=github
@@ -56,9 +56,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv pip install -r requirements-dev.txt
-          uv pip install -e packages/core
-          uv pip install -e packages/libraries
+          uv pip install --system -r requirements-dev.txt
+          uv pip install --system -e packages/core
+          uv pip install --system -e packages/libraries
 
       - name: Run tests
         run: |
@@ -115,7 +115,7 @@ jobs:
         run: uv python install 3.11
 
       - name: Install build tools
-        run: uv pip install build
+        run: uv pip install --system build
 
       - name: Build core package
         run: python -m build packages/core
