@@ -88,6 +88,10 @@ describe('useAutoSave', () => {
     (useFileStore as unknown as ReturnType<typeof vi.fn>).mockImplementation(
       (selector: (state: typeof mockFileStore) => unknown) => selector(mockFileStore)
     );
+
+    vi.mocked(idb.autosave.get).mockResolvedValue(null);
+    vi.mocked(idb.autosave.save).mockResolvedValue(undefined);
+    vi.mocked(idb.autosave.clear).mockResolvedValue(undefined);
   });
 
   afterEach(() => {
