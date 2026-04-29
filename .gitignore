@@ -147,7 +147,9 @@ robot_results/
 
 # Tool directories
 .omx/
+.omc/
 .kilo/plans/
+.claude/
 
 # Lock files (optional - uncomment if you want to ignore)
 # uv.lock
