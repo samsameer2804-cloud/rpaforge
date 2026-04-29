@@ -54,15 +54,22 @@ jobs:
         run: uv python install ${{ matrix.python-version }}
 
       - name: Install dependencies
+        shell: bash
         run: |
+          set -e
+          uv venv
+          . .venv/bin/activate
           uv pip install -r requirements-dev.txt
           uv pip install -e packages/core
           uv pip install -e packages/libraries
 
       - name: Run tests
+        shell: bash
         run: |
-          uvx pytest packages/core/tests -v --tb=short --cov=src --cov-report=xml
-          uvx pytest packages/libraries/tests -v --tb=short
+          set -e
+          . .venv/bin/activate
+          python -m pytest packages/core/tests -v --tb=short --cov=src --cov-report=xml
+          python -m pytest packages/libraries/tests -v --tb=short
 
       - name: Upload coverage
         uses: codecov/codecov-action@v6
