@@ -38,7 +38,7 @@ if (typeof window !== 'undefined') {
       onerror: null,
     };
     window.indexedDB = {
-      open: (name: string, version: number) => {
+      open: (_name: string, _version: number) => {
         const req = {
           onsuccess: null as (() => void) | null,
           onerror: null as (() => void) | null,
