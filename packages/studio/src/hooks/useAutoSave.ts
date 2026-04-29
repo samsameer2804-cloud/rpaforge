@@ -6,6 +6,7 @@ import { useDiagramStore } from '../stores/diagramStore';
 import { useProjectFsStore } from '../stores/projectFsStore';
 import { useVariableStore } from '../stores/variableStore';
 import { serializeDiagram } from '../utils/fileUtils';
+import { idb } from '../utils/db';
 import { config } from '../config/app.config';
 import { createLogger } from '../utils/logger';
 
@@ -16,7 +17,8 @@ export interface AutoSaveOptions {
   onError?: (error: Error) => void;
 }
 
-const BACKUP_KEY = 'rpaforge-autosave-backup';
+const BACKUP_ID = 'current-diagram';
+const LOCAL_STORAGE_BACKUP_KEY = 'rpaforge-autosave-backup';
 const logger = createLogger('useAutoSave');
 
 function simpleHash(str: string): string {
@@ -29,11 +31,81 @@ function simpleHash(str: string): string {
   return hash.toString(16);
 }
 
+async function saveToIndexedDB(content: string, hash: string): Promise<void> {
+  try {
+    await idb.autosave.save(BACKUP_ID, content, hash);
+  } catch (e) {
+    logger.error('Failed to save to IndexedDB', e);
+    try {
+      localStorage.setItem(LOCAL_STORAGE_BACKUP_KEY, content);
+    } catch {
+      logger.error('Failed to save to localStorage as fallback');
+    }
+  }
+}
+
+async function getFromIndexedDB(): Promise<{ content: string; hash: string; timestamp: number } | null> {
+  try {
+    const result = await idb.autosave.get(BACKUP_ID);
+    if (result) {
+      return result;
+    }
+  } catch {
+    logger.warn('Failed to get from IndexedDB, trying localStorage');
+  }
+
+  try {
+    const local = localStorage.getItem(LOCAL_STORAGE_BACKUP_KEY);
+    if (local) {
+      return { content: local, hash: simpleHash(local), timestamp: Date.now() };
+    }
+  } catch {
+    logger.warn('Failed to get from localStorage');
+  }
+
+  return null;
+}
+
+async function clearIndexedDB(): Promise<void> {
+  try {
+    await idb.autosave.delete(BACKUP_ID);
+  } catch {
+    logger.warn('Failed to clear from IndexedDB');
+  }
+  localStorage.removeItem(LOCAL_STORAGE_BACKUP_KEY);
+}
+
+async function hasIndexedDBBackup(): Promise<boolean> {
+  try {
+    const result = await idb.autosave.get(BACKUP_ID);
+    return !!result;
+  } catch {
+    return localStorage.getItem(LOCAL_STORAGE_BACKUP_KEY) !== null;
+  }
+}
+
+async function restoreFromIndexedDB(): Promise<{ metadata: unknown; nodes: unknown[]; edges: unknown[] } | null> {
+  try {
+    const result = await getFromIndexedDB();
+    if (!result) return null;
+
+    const data = JSON.parse(result.content);
+    return {
+      metadata: data.metadata,
+      nodes: data.nodes,
+      edges: data.edges,
+    };
+  } catch (err) {
+    logger.warn('Failed to restore backup', err);
+    return null;
+  }
+}
+
 export function useAutoSave(options: AutoSaveOptions = {}): {
   forceSave: () => void;
   clearBackup: () => void;
-  hasBackup: () => boolean;
-  restoreBackup: () => { metadata: unknown; nodes: unknown[]; edges: unknown[] } | null;
+  hasBackup: () => Promise<boolean>;
+  restoreBackup: () => Promise<{ metadata: unknown; nodes: unknown[]; edges: unknown[] } | null>;
 } {
   const {
     enabled = config.autosave.enabled,
@@ -74,8 +146,8 @@ export function useAutoSave(options: AutoSaveOptions = {}): {
     }
 
     try {
-      localStorage.setItem(BACKUP_KEY, content);
-      
+      await saveToIndexedDB(content, contentHash);
+
       if (projectPath && project && activeDiagramId) {
         const activeDiagram = project.diagrams.find((d) => d.id === activeDiagramId);
         if (activeDiagram) {
@@ -87,17 +159,17 @@ export function useAutoSave(options: AutoSaveOptions = {}): {
             variables: diagramVars,
           };
           await writeFile(activeDiagram.path, JSON.stringify(processContent, null, 2));
-          
+
           saveDiagramDocument(activeDiagramId, {
             metadata,
             nodes,
             edges,
           });
-          
+
           logger.debug(`Auto-saved diagram to ${activeDiagram.path}`);
         }
       }
-      
+
       lastSaveRef.current = contentHash;
       const now = new Date().toISOString();
       setLastSaved(now);
@@ -114,28 +186,15 @@ export function useAutoSave(options: AutoSaveOptions = {}): {
   }, [performSave]);
 
   const clearBackup = useCallback(() => {
-    localStorage.removeItem(BACKUP_KEY);
+    clearIndexedDB();
   }, []);
 
-  const hasBackup = useCallback((): boolean => {
-    return localStorage.getItem(BACKUP_KEY) !== null;
+  const hasBackup = useCallback(async (): Promise<boolean> => {
+    return hasIndexedDBBackup();
   }, []);
 
-  const restoreBackup = useCallback((): { metadata: unknown; nodes: unknown[]; edges: unknown[] } | null => {
-    try {
-      const backup = localStorage.getItem(BACKUP_KEY);
-      if (!backup) return null;
-
-      const data = JSON.parse(backup);
-      return {
-        metadata: data.metadata,
-        nodes: data.nodes,
-        edges: data.edges,
-      };
-    } catch (err) {
-      logger.warn('Failed to restore backup', err);
-      return null;
-    }
+  const restoreBackup = useCallback(async (): Promise<{ metadata: unknown; nodes: unknown[]; edges: unknown[] } | null> => {
+    return restoreFromIndexedDB();
   }, []);
 
   useEffect(() => {
