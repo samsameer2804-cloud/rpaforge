@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
+import { useFileOperations } from '../../hooks/useFileOperations';
 import { useBlockStore } from '../../stores/blockStore';
 import { useExecutionStore } from '../../stores/executionStore';
 import { useProcessMetadataStore } from '../../stores/processMetadataStore';
@@ -22,6 +23,7 @@ import CodeModal from './CodeModal';
 import { LoadingOverlay } from '../Common/Loading';
 import { MermaidPreview } from '../Common/MermaidPreview';
 import HelpDialog from '../Common/HelpDialog';
+import { WelcomeScreen } from '../Common/WelcomeScreen';
 
 type Tab = 'designer' | 'debugger' | 'console';
 
@@ -33,6 +35,7 @@ const Layout: React.FC = () => {
   const [showCodeModal, setShowCodeModal] = useState(false);
   const [showMermaidPreview, setShowMermaidPreview] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem('rpaforge_welcomed'));
   const initialLoadComplete = useRef(false);
   const prevDiagramRef = useRef<string>('');
 
@@ -70,6 +73,8 @@ const Layout: React.FC = () => {
   } = useEngine();
 
   const { loading, loadingMessage, setLoading, setLoadingMessage } = useUIStore();
+
+  const { newProject, openProjectFolder } = useFileOperations();
 
   useAutoSave({
     enabled: config.autosave.enabled,
@@ -441,6 +446,14 @@ const Layout: React.FC = () => {
       <LoadingOverlay isVisible={loading.execute} message={loadingMessage || 'Executing...'} progress={executionProgress > 0 ? executionProgress : undefined} />
 
       <HelpDialog open={showHelp} onClose={() => setShowHelp(false)} />
+
+      {showWelcome && (
+        <WelcomeScreen
+          onNewProcess={() => newProject('New Project')}
+          onOpenProcess={() => openProjectFolder()}
+          onDismiss={() => setShowWelcome(false)}
+        />
+      )}
     </div>
   );
 };
