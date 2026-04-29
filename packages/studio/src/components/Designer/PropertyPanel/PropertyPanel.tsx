@@ -39,9 +39,16 @@ const PropertyPanel: React.FC = () => {
     return nodes.find((node) => node.id === selectedNodeId) || null;
   }, [nodes, selectedNodeId]);
 
+  const projectId = useDiagramStore((state) => state.project?.id || '');
+
+  const projectVariables = useMemo(() => {
+    if (!projectId) return variables;
+    return variables.filter((v) => v.projectId === projectId);
+  }, [variables, projectId]);
+
   const variableOptions = useMemo<VariableOption[]>(
-    () => variables.map((v) => ({ name: v.name, type: v.type, scope: v.scope, value: v.value ?? undefined })),
-    [variables]
+    () => projectVariables.map((v) => ({ name: v.name, type: v.type, scope: v.scope, value: v.value ?? undefined })),
+    [projectVariables]
   );
 
   const handlers = useBlockDataHandlers({ selectedNodeId, selectedNode, updateNode });

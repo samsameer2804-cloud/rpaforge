@@ -3,6 +3,7 @@ import { FiX, FiEye, FiEyeOff, FiPlus, FiTrash2, FiInfo } from 'react-icons/fi';
 import ConfirmDialog from '../Common/ConfirmDialog';
 import { useDebuggerStore } from '../../stores/debuggerStore';
 import { useVariableStore } from '../../stores/variableStore';
+import { useDiagramStore } from '../../stores/diagramStore';
 import type { Variable } from '../../types/engine';
 import VariableDialog, { type VariableDefinition } from '../Designer/VariableDialog';
 
@@ -118,10 +119,17 @@ const VariablePanel: React.FC = () => {
   } = useDebuggerStore();
 
   const { 
-    variables: processVariables, 
+    variables: allVariables, 
     addVariable, 
     removeVariable 
   } = useVariableStore();
+  
+  const projectId = useDiagramStore((state) => state.project?.id || '');
+
+  const processVariables = useMemo(() => {
+    if (!projectId) return allVariables;
+    return allVariables.filter((v) => v.projectId === projectId);
+  }, [allVariables, projectId]);
   
   const [activeTab, setActiveTab] = useState<'variables' | 'watch' | 'process'>('variables');
   const [showVariableDialog, setShowVariableDialog] = useState(false);

@@ -1023,6 +1023,13 @@ class BridgeHandlers:
                         code_info = diag.get("code", {})
                         message = diag.get("message", "")
 
+                        if isinstance(code_info, dict):
+                            code_str = f"{code_info.get('prefix', '')}{code_info.get('value', '')}"
+                        elif isinstance(code_info, str):
+                            code_str = code_info
+                        else:
+                            code_str = ""
+
                         error_entry = {
                             "line": location.get("line", 1),
                             "column": location.get("column", 0),
@@ -1031,7 +1038,7 @@ class BridgeHandlers:
                             ),
                             "endColumn": end_location.get("column", 0),
                             "message": message,
-                            "code": f"{code_info.get('prefix', '')}{code_info.get('value', '')}",
+                            "code": code_str,
                             "severity": severity.lower(),
                         }
 
