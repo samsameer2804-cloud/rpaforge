@@ -106,19 +106,14 @@ const PythonCodeEditor: React.FC<PythonCodeEditorProps> = ({
     const monaco = monacoRef.current;
     if (!editor || !monaco) return;
 
-    const commandId1 = editor.addCommand(
+    editor.addCommand(
       monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyF,
       () => handleFormat()
     );
-    const commandId2 = editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyG, () => {
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyG, () => {
       const action = editor.getAction('editor.action.gotoLine');
       action?.run();
     });
-
-    return () => {
-      if (commandId1) editor.removeCommand(commandId1);
-      if (commandId2) editor.removeCommand(commandId2);
-    };
   }, [handleFormat]);
 
   useEffect(() => {
