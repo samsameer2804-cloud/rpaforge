@@ -12,7 +12,7 @@
     "lint:fix": "eslint src --fix",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
-    "electron:dev": "vite",
+    "electron:dev": "vite --host 127.0.0.1 --port 5173",
     "electron:build": "vite build && electron-builder"
   },
   "keywords": [
