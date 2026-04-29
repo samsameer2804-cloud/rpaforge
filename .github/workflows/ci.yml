@@ -22,14 +22,11 @@ jobs:
       - name: Set up Python
         run: uv python install 3.11
 
-      - name: Install lint tools
-        run: uv pip install --system --break-system-packages ruff black isort mypy
-
       - name: Run Ruff
-        run: ruff check packages/ --output-format=github
+        run: uvx ruff check packages/ --output-format=github
 
       - name: Check Black formatting
-        run: black --check --target-version=py311 packages/
+        run: uvx black --check packages/
 
   test:
     name: Test (Python ${{ matrix.python-version }}, ${{ matrix.os }})
@@ -58,12 +55,15 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv pip install --system --break-system-packages -r requirements-dev.txt
-          uv pip install --system --break-system-packages -e packages/core
-          uv pip install --system --break-system-packages -e packages/libraries
+          uv venv
+          source .venv/bin/activate
+          uv pip install -r requirements-dev.txt
+          uv pip install -e packages/core
+          uv pip install -e packages/libraries
 
       - name: Run tests
         run: |
+          source .venv/bin/activate
           pytest packages/core/tests -v --tb=short --cov=src --cov-report=xml
           cd packages/libraries && pytest tests -v --tb=short
 
@@ -119,13 +119,20 @@ jobs:
         run: uv python install 3.11
 
       - name: Install build tools
-        run: uv pip install --system --break-system-packages build
+        run: |
+          uv venv
+          source .venv/bin/activate
+          uv pip install build
 
       - name: Build core package
-        run: python -m build packages/core
+        run: |
+          source .venv/bin/activate
+          python -m build packages/core
 
       - name: Build libraries package
-        run: python -m build packages/libraries
+        run: |
+          source .venv/bin/activate
+          python -m build packages/libraries
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
