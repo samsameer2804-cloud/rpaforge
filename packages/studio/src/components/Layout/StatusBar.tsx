@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FiPause, FiPlay, FiSquare, FiActivity, FiZap } from 'react-icons/fi';
+import { FiPause, FiPlay, FiSquare, FiActivity, FiZap, FiDatabase, FiAlertTriangle } from 'react-icons/fi';
 import type { ExecutionState, ExecutionSpeed } from '../../stores/processStore';
 import type { ProcessMetadata } from '../../stores/processStore';
 import type { Capabilities } from '../../types/engine';
 import type { BridgeState } from '../../types/events';
 import { useFileStore } from '../../stores/fileStore';
+import { useStorageStats } from '../../hooks/useStorageStats';
+import StorageDialog from '../Common/StorageDialog';
 
 const TIPS = [
   'Press Ctrl+Space to quick-add activities',
@@ -41,9 +43,11 @@ const StatusBar: React.FC<StatusBarProps> = ({
 }) => {
   const isDirty = useFileStore((state) => state.isDirty);
   const lastSaved = useFileStore((state) => state.lastSaved);
+  const { isWarning, isExceeded } = useStorageStats();
 
   const [currentTipIndex, setCurrentTipIndex] = useState(0);
   const [showTip, setShowTip] = useState(false);
+  const [showStorageDialog, setShowStorageDialog] = useState(false);
 
   const randomTip = useMemo(() => {
     return TIPS[Math.floor(Math.random() * TIPS.length)];
@@ -140,8 +144,18 @@ const StatusBar: React.FC<StatusBarProps> = ({
             {showConsole ? 'Hide Console' : 'Show Console'}
           </button>
         )}
+        <button
+          className={`flex items-center gap-1 ${
+            isExceeded ? 'text-red-500' : isWarning ? 'text-yellow-500' : 'text-slate-500'
+          } hover:text-slate-700 dark:hover:text-slate-300`}
+          onClick={() => setShowStorageDialog(true)}
+          title="Storage"
+        >
+          {isExceeded ? <FiAlertTriangle className="w-3 h-3" /> : <FiDatabase className="w-3 h-3" />}
+        </button>
         <span className="text-slate-500">{runtimeSummary}</span>
       </div>
+      <StorageDialog isOpen={showStorageDialog} onClose={() => setShowStorageDialog(false)} />
     </footer>
   );
 };

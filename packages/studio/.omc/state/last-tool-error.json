@@ -1,7 +1,0 @@
-{
-  "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"cd packages/studio && npx tsc --noEmit 2>&1 | head -40\",\"description\":\"TypeScript type check\"}",
-  "error": "Exit code 1\n/usr/bin/bash: line 1: cd: packages/studio: No such file or directory",
-  "timestamp": "2026-04-28T10:33:00.106Z",
-  "retry_count": 1
-}
