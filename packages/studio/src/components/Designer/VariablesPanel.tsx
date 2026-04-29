@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { FiChevronDown, FiChevronRight, FiPlus, FiTrash2, FiEdit2 } from 'react-icons/fi';
 import { useVariableStore, type ProcessVariable } from '../../stores/variableStore';
+import { useDiagramStore } from '../../stores/diagramStore';
 import VariableDialog, { type VariableDefinition } from './VariableDialog';
 
 const getTypeIcon = (type: string) => {
@@ -42,26 +43,39 @@ interface VariablesPanelProps {
 
 const VariablesPanel: React.FC<VariablesPanelProps> = ({ defaultExpanded = true }) => {
   const { variables, addVariable, removeVariable } = useVariableStore();
+  const project = useDiagramStore((state) => state.project);
+  const activeDiagramId = useDiagramStore((state) => state.activeDiagramId);
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [showVariableDialog, setShowVariableDialog] = useState(false);
   const [editingVariable, setEditingVariable] = useState<ProcessVariable | null>(null);
 
+  const projectVariables = useMemo(() => {
+    if (!project?.id) return variables;
+    if (!activeDiagramId) return variables.filter(v => v.projectId === project.id && v.scope === 'process');
+    return variables.filter(
+      (v) =>
+        v.projectId === project.id &&
+        (v.scope === 'process' || v.diagramId === activeDiagramId)
+    );
+  }, [variables, project?.id, activeDiagramId]);
+
   const variableOptions = useMemo(
     () =>
-      variables.map((variable) => ({
+      projectVariables.map((variable) => ({
         name: variable.name,
         type: variable.type,
         scope: variable.scope,
         value: variable.value,
       })),
-    [variables]
+    [projectVariables]
   );
 
   const handleCreateVariable = (definition: VariableDefinition) => {
+    if (!project?.id) return;
     if (editingVariable) {
       removeVariable(editingVariable.id);
     }
-    addVariable(definition);
+    addVariable(definition, project.id, activeDiagramId || undefined);
     setEditingVariable(null);
   };
 
@@ -80,7 +94,7 @@ const VariablesPanel: React.FC<VariablesPanelProps> = ({ defaultExpanded = true 
       task: [],
     };
     
-    for (const variable of variables) {
+    for (const variable of projectVariables) {
       if (!groups[variable.scope]) {
         groups[variable.scope] = [];
       }
@@ -88,8 +102,8 @@ const VariablesPanel: React.FC<VariablesPanelProps> = ({ defaultExpanded = true 
     }
     
     return groups;
-  }, [variables]);
-
+  }, [projectVariables]);
+  
   return (
     <div className="border-t border-slate-200 dark:border-slate-700">
       <div
@@ -99,7 +113,7 @@ const VariablesPanel: React.FC<VariablesPanelProps> = ({ defaultExpanded = true 
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsExpanded(!isExpanded); } }}
         aria-expanded={isExpanded}
         aria-controls="variables-panel-content"
-        aria-label={`Variables (${variables.length}), ${isExpanded ? 'collapse' : 'expand'}`}
+        aria-label={`Variables (${projectVariables.length}), ${isExpanded ? 'collapse' : 'expand'}`}
         className="w-full flex items-center justify-between px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
       >
         <div className="flex items-center gap-2">
@@ -113,7 +127,7 @@ const VariablesPanel: React.FC<VariablesPanelProps> = ({ defaultExpanded = true 
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-400">{variables.length}</span>
+          <span className="text-xs text-slate-400">{projectVariables.length}</span>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -122,6 +136,7 @@ const VariablesPanel: React.FC<VariablesPanelProps> = ({ defaultExpanded = true 
             }}
             className="p-1 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded"
             title="Add variable"
+            disabled={!project?.id}
           >
             <FiPlus className="w-3.5 h-3.5" />
           </button>
@@ -130,7 +145,11 @@ const VariablesPanel: React.FC<VariablesPanelProps> = ({ defaultExpanded = true 
 
       {isExpanded && (
         <div id="variables-panel-content" className="max-h-64 overflow-y-auto">
-          {variables.length === 0 ? (
+          {!project?.id ? (
+            <div className="px-3 py-4 text-center">
+              <div className="text-xs text-slate-400">Open a project to manage variables</div>
+            </div>
+          ) : projectVariables.length === 0 ? (
             <div className="px-3 py-4 text-center">
               <div className="text-xs text-slate-400 mb-2">No variables defined</div>
               <button
@@ -200,7 +219,7 @@ const VariablesPanel: React.FC<VariablesPanelProps> = ({ defaultExpanded = true 
           setEditingVariable(null);
         }}
         onCreate={handleCreateVariable}
-        existingVariables={variables.filter(v => v.id !== editingVariable?.id).map((v) => v.name)}
+        existingVariables={projectVariables.filter(v => v.id !== editingVariable?.id).map((v) => v.name)}
         variables={variableOptions}
         editVariable={editingVariable ? {
           name: editingVariable.name,

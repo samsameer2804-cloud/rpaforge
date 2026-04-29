@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { StudioAPI } from '../src/types/ipc-contracts';
+import type { StudioAPI, LogEntry } from '../src/types/ipc-contracts';
 import type { BridgeEvent, FileSystemEvent } from '../src/types/events';
 
 const IPC_CHANNELS = {
@@ -45,6 +45,10 @@ const IPC_CHANNELS = {
   FS_WATCH_DIR: 'fs:watchDir',
   FS_UNWATCH_DIR: 'fs:unwatchDir',
   FS_EVENT: 'fs:event',
+  LOG_WRITE: 'log:write',
+  LOG_GET: 'log:get',
+  LOG_EXPORT: 'log:export',
+  LOG_CLEAR: 'log:clear',
 } as const;
 
 const api: StudioAPI = {
@@ -117,6 +121,16 @@ const api: StudioAPI = {
       ipcRenderer.on(IPC_CHANNELS.FS_EVENT, handler);
       return () => ipcRenderer.removeListener(IPC_CHANNELS.FS_EVENT, handler);
     },
+  },
+
+  log: {
+    log: (entry: Omit<LogEntry, 'timestamp'>) => {
+      ipcRenderer.send(IPC_CHANNELS.LOG_WRITE, { ...entry, timestamp: new Date().toISOString() });
+    },
+    getLogs: (filter?: { level?: string; scope?: string }) =>
+      ipcRenderer.invoke(IPC_CHANNELS.LOG_GET, filter),
+    exportLogs: () => ipcRenderer.invoke(IPC_CHANNELS.LOG_EXPORT),
+    clearLogs: () => ipcRenderer.invoke(IPC_CHANNELS.LOG_CLEAR),
   },
 };
 

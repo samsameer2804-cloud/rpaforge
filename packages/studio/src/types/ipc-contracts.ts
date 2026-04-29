@@ -183,6 +183,21 @@ export interface FileSystemAPI {
 // Combined Studio API (exposed via contextBridge)
 // =============================================================================
 
+export interface LogEntry {
+  level: 'debug' | 'info' | 'warn' | 'error';
+  scope: string;
+  message: string;
+  details?: unknown;
+  timestamp: string;
+}
+
+export interface LogAPI {
+  log: (entry: Omit<LogEntry, 'timestamp'>) => void;
+  getLogs: (filter?: { level?: string; scope?: string }) => Promise<LogEntry[]>;
+  exportLogs: () => Promise<string>;
+  clearLogs: () => void;
+}
+
 export interface StudioAPI {
   bridge: BridgeAPI;
   engine: EngineAPI;
@@ -190,6 +205,7 @@ export interface StudioAPI {
   editor: EditorAPI;
   dialog: DialogAPI;
   fs: FileSystemAPI;
+  log: LogAPI;
 }
 
 // =============================================================================

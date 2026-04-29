@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { FiChevronRight, FiChevronDown, FiSearch } from 'react-icons/fi';
 import { useVariableStore, type ProcessVariable } from '../../stores/variableStore';
+import { useDiagramStore } from '../../stores/diagramStore';
 
 interface VariablesPanelProps {
   isOpen: boolean;
@@ -9,9 +10,21 @@ interface VariablesPanelProps {
 }
 
 const VariablesPanel: React.FC<VariablesPanelProps> = ({ isOpen, onInsertVariable }) => {
-  const variables = useVariableStore((state) => state.variables);
+  const allVariables = useVariableStore((state) => state.variables);
+  const project = useDiagramStore((state) => state.project);
+  const activeDiagramId = useDiagramStore((state) => state.activeDiagramId);
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedScopes, setExpandedScopes] = useState<Set<string>>(new Set(['process']));
+
+  const variables = useMemo(() => {
+    if (!project?.id) return allVariables;
+    if (!activeDiagramId) return allVariables.filter(v => v.projectId === project.id && v.scope === 'process');
+    return allVariables.filter(
+      (v) =>
+        v.projectId === project.id &&
+        (v.scope === 'process' || v.diagramId === activeDiagramId)
+    );
+  }, [allVariables, project?.id, activeDiagramId]);
 
   const toggleScope = (scope: string) => {
     setExpandedScopes((prev) => {

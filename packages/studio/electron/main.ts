@@ -5,7 +5,7 @@ import * as fsp from 'node:fs/promises';
 import chokidar, { type FSWatcher } from 'chokidar';
 import { PythonBridge } from './python-bridge';
 import { IPC_CHANNELS } from '../src/types/ipc-contracts';
-import type { BridgeState, BridgeStatus, FsEvent } from '../src/types/events';
+import type { BridgeState, BridgeStatus, FsEvent, LogEntry } from '../src/types/ipc-contracts';
 import type { OpenDialogOptions, SaveDialogOptions, FileInfo } from '../src/types/ipc-contracts';
 import { createLogger } from '../src/utils/logger';
 import { config } from '../src/config/app.config';
@@ -20,6 +20,87 @@ const debouncedSend: Map<string, NodeJS.Timeout> = new Map();
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 const logger = createLogger('electron-main');
 const FS_DEBOUNCE_MS = 100;
+
+const LOG_DIR = path.join(app.getPath('userData'), 'logs');
+const LOG_FILE = path.join(LOG_DIR, 'app.log');
+const MAX_LOG_SIZE = 5 * 1024 * 1024;
+const MAX_LOG_FILES = 5;
+const logBuffer: LogEntry[] = [];
+const MAX_BUFFER_SIZE = 100;
+
+async function ensureLogDir(): Promise<void> {
+  try {
+    await fsp.mkdir(LOG_DIR, { recursive: true });
+  } catch {
+    // Ignore if exists
+  }
+}
+
+async function writeLogToFile(entry: LogEntry): Promise<void> {
+  try {
+    await ensureLogDir();
+    const line = JSON.stringify(entry) + '\n';
+    const stats = await fsp.stat(LOG_FILE).catch(() => null);
+    
+    if (stats && stats.size >= MAX_LOG_SIZE) {
+      await rotateLogs();
+    }
+    
+    await fsp.appendFile(LOG_FILE, line, 'utf-8');
+  } catch {
+    // Ignore write errors
+  }
+}
+
+async function rotateLogs(): Promise<void> {
+  try {
+    for (let i = MAX_LOG_FILES - 1; i >= 1; i--) {
+      const oldFile = path.join(LOG_DIR, `app.${i}.log`);
+      const newFile = path.join(LOG_DIR, `app.${i + 1}.log`);
+      try {
+        await fsp.rename(oldFile, newFile);
+      } catch {
+        // Ignore if doesn't exist
+      }
+    }
+    const firstBackup = path.join(LOG_DIR, 'app.1.log');
+    try {
+      await fsp.rename(LOG_FILE, firstBackup);
+    } catch {
+      // Ignore
+    }
+  } catch {
+    // Ignore rotation errors
+  }
+}
+
+async function getStoredLogs(filter?: { level?: string; scope?: string }): Promise<LogEntry[]> {
+  try {
+    const content = await fsp.readFile(LOG_FILE, 'utf-8');
+    const lines = content.split('\n').filter(Boolean);
+    let logs: LogEntry[] = lines.map((line) => JSON.parse(line));
+    
+    if (filter?.level) {
+      logs = logs.filter((l) => l.level === filter.level);
+    }
+    if (filter?.scope) {
+      logs = logs.filter((l) => l.scope === filter.scope);
+    }
+    
+    return logs;
+  } catch {
+    return [];
+  }
+}
+
+async function exportAllLogs(): Promise<string> {
+  try {
+    const logs = await getStoredLogs();
+    return JSON.stringify(logs, null, 2);
+  } catch {
+    return '[]';
+  }
+}
 
 function debouncedSendEvent(channel: string, event: FsEvent, key: string): void {
   const timeoutKey = `${channel}:${key}`;
@@ -436,6 +517,31 @@ function setupIPCHandlers() {
       await watcher.close();
       fsWatchers.delete(dirPath);
       logger.info(`Stopped watching directory: ${dirPath}`);
+    }
+  });
+
+  ipcMain.on(IPC_CHANNELS.LOG_WRITE, async (_, entry: LogEntry) => {
+    logBuffer.push(entry);
+    if (logBuffer.length > MAX_BUFFER_SIZE) {
+      logBuffer.shift();
+    }
+    await writeLogToFile(entry);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.LOG_GET, async (_, filter?: { level?: string; scope?: string }) => {
+    return [...logBuffer, ...await getStoredLogs(filter)];
+  });
+
+  ipcMain.handle(IPC_CHANNELS.LOG_EXPORT, async () => {
+    return exportAllLogs();
+  });
+
+  ipcMain.handle(IPC_CHANNELS.LOG_CLEAR, async () => {
+    logBuffer.length = 0;
+    try {
+      await fsp.unlink(LOG_FILE).catch(() => {});
+    } catch {
+      // Ignore
     }
   });
 }

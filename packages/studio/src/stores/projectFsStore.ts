@@ -122,7 +122,7 @@ async function scanDirectory(dirPath: string, basePath: string): Promise<Project
 
 interface ProcessFileContent {
   version: string;
-  templateType?: string;
+  exportedAt?: string;
   metadata?: {
     id: string;
     name: string;
@@ -136,6 +136,7 @@ interface ProcessFileContent {
   };
   nodes?: unknown[];
   edges?: unknown[];
+  variables?: unknown[];
 }
 
 interface RpaforgeFileContent {
@@ -148,6 +149,7 @@ interface RpaforgeFileContent {
     category?: string;
   };
   project: {
+    id?: string;
     name: string;
     version: string;
     settings?: {
@@ -162,6 +164,7 @@ interface RpaforgeFileContent {
     folder?: string;
   }>;
   folders?: string[];
+  variables?: Record<string, unknown>;
 }
 
 async function loadProcessFile(filePath: string): Promise<ProcessFileContent | null> {
@@ -284,6 +287,7 @@ export const useProjectFsStore = create<ProjectFsState>((set, get) => ({
       }
 
       const projectConfig: ProjectConfig = {
+        id: rpaforgeData.project?.id || `proj_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
         name: rpaforgeData.project?.name || projectFile.name.replace('.rpaforge', ''),
         version: rpaforgeData.project?.version || '1.0.0',
         main: mainDiagramId || diagrams.find((d) => d.type === 'main')?.id || diagrams[0]?.id || '',

@@ -1,13 +1,14 @@
 import type { Node, Edge } from '@reactflow/core';
 import type { ProcessNodeData, ProcessMetadata } from '../stores/processStore';
 import type { DiagramDocument, ProjectConfig } from '../stores/diagramStore';
+import type { ProcessVariable } from '../stores/variableStore';
 import { createLogger } from './logger';
 
 export const PROCESS_EXTENSION = '.process';
 export const PROJECT_EXTENSION = '.rpaforge';
 
-const PROCESS_FORMAT_VERSION = '1.0.0';
-const PROJECT_FORMAT_VERSION = '1.0.0';
+const PROCESS_FORMAT_VERSION = '1.1.0';
+const PROJECT_FORMAT_VERSION = '1.1.0';
 const logger = createLogger('fileUtils');
 
 export interface ProcessFile {
@@ -17,6 +18,7 @@ export interface ProcessFile {
   nodes: Node<ProcessNodeData>[];
   edges: Edge[];
   viewport?: { x: number; y: number; zoom: number };
+  variables: ProcessVariable[];
 }
 
 export type DiagramExport = ProcessFile;
@@ -32,6 +34,7 @@ export interface ProjectFile {
   exportedAt: string;
   project: ProjectConfig;
   diagrams: Record<string, DiagramDocument>;
+  variables?: Record<string, ProcessVariable[]>;
 }
 
 export type ProjectExport = ProjectFile;
@@ -46,7 +49,8 @@ export function serializeDiagram(
   nodes: Node<ProcessNodeData>[],
   edges: Edge[],
   metadata: ProcessMetadata,
-  viewport?: { x: number; y: number; zoom: number }
+  viewport?: { x: number; y: number; zoom: number },
+  variables: ProcessVariable[] = []
 ): string {
   const exportData: ProcessFile = {
     version: PROCESS_FORMAT_VERSION,
@@ -55,6 +59,7 @@ export function serializeDiagram(
     nodes,
     edges,
     viewport,
+    variables,
   };
   return JSON.stringify(exportData, null, 2);
 }
@@ -73,6 +78,10 @@ export function deserializeDiagram(json: string): DiagramImportResult {
       logger.warn(
         `Process file version ${data.version} may not be fully compatible with current version ${PROCESS_FORMAT_VERSION}`
       );
+    }
+
+    if (!data.variables) {
+      data.variables = [];
     }
 
     return { success: true, diagram: data };
@@ -122,13 +131,15 @@ export function isValidProcessFile(file: File): boolean {
 
 export function serializeProject(
   project: ProjectConfig,
-  diagrams: Record<string, DiagramDocument>
+  diagrams: Record<string, DiagramDocument>,
+  variables?: Record<string, ProcessVariable[]>
 ): string {
   const exportData: ProjectFile = {
     version: PROJECT_FORMAT_VERSION,
     exportedAt: new Date().toISOString(),
     project,
     diagrams,
+    variables,
   };
   return JSON.stringify(exportData, null, 2);
 }
@@ -145,6 +156,10 @@ export function deserializeProject(json: string): ProjectImportResult {
       logger.warn(
         `Project file version ${data.version} may not be fully compatible with current version ${PROJECT_FORMAT_VERSION}`
       );
+    }
+
+    if (!data.variables) {
+      data.variables = {};
     }
 
     return { success: true, project: data };

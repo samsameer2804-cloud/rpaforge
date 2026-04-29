@@ -4,6 +4,7 @@ import type { Edge, Node } from '@reactflow/core';
 import { config } from '../config/app.config';
 import type { ProcessMetadata, ProcessNodeData } from './processStore';
 import { createStartBlockNode } from './processStore';
+import { useVariableStore } from './variableStore';
 
 export type DiagramType = 'main' | 'sub-diagram' | 'library';
 
@@ -21,6 +22,7 @@ export interface DiagramMetadata {
 }
 
 export interface ProjectConfig {
+  id?: string;
   name: string;
   version: string;
   main: string;
@@ -123,7 +125,9 @@ export const useDiagramStore = create<DiagramState>()(
         };
 
         const mainDocument = createDiagramDocument(mainDiagram);
+        const projectId = `proj_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
         const project: ProjectConfig = {
+          id: projectId,
           name,
           version: '1.0.0',
           main: mainDiagram.id,
@@ -131,6 +135,8 @@ export const useDiagramStore = create<DiagramState>()(
           folders: [],
           settings: DEFAULT_SETTINGS,
         };
+
+        useVariableStore.getState().clearVariables();
 
         set({
           project,
@@ -143,6 +149,10 @@ export const useDiagramStore = create<DiagramState>()(
       },
 
       loadProject: (config, documents) => {
+        if (config.id) {
+          useVariableStore.getState().clearProjectVariables(config.id);
+        }
+
         const generatedDocuments = Object.fromEntries(
           config.diagrams.map((diagram) => [
             diagram.id,

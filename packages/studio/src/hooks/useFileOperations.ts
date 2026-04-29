@@ -8,6 +8,7 @@ import { useSelectionStore } from '../stores/selectionStore';
 import { useExecutionStore } from '../stores/executionStore';
 import { useFileStore } from '../stores/fileStore';
 import { useProjectFsStore } from '../stores/projectFsStore';
+import { useVariableStore, type ProcessVariable } from '../stores/variableStore';
 import {
   deserializeProject,
   serializeDiagram,
@@ -89,6 +90,10 @@ export const useFileOperations = (): UseFileOperationsResult => {
     writeFile,
   } = useProjectFsStore();
 
+  const variables = useVariableStore((state) => state.variables);
+  const loadVariables = useVariableStore((state) => state.loadVariables);
+  const getVariablesByProject = useVariableStore((state) => state.getVariablesByProject);
+
   const loadProcess = useCallback((meta: ProcessMetadata, newNodes: ProcessNode[], newEdges: Edge[]): boolean => {
     setMetadata(meta);
     setNodes(newNodes);
@@ -138,13 +143,20 @@ export const useFileOperations = (): UseFileOperationsResult => {
           if (!projectExport) {
             return;
           }
-          content = serializeProject(projectExport.project, projectExport.diagrams);
+          const projectVars: Record<string, ProcessVariable[]> = {};
+          for (const diagram of project.diagrams) {
+            projectVars[diagram.id] = getVariablesByProject(project.id!).filter(
+              (v) => v.scope === 'process' || v.diagramId === diagram.id
+            );
+          }
+          content = serializeProject(projectExport.project, projectExport.diagrams, projectVars);
           filename = generateProjectFilename(currentFile.name);
         } else {
           if (!metadata) {
             return;
           }
-          content = serializeDiagram(nodes, edges, metadata);
+          const diagramVars = variables || [];
+          content = serializeDiagram(nodes, edges, metadata, undefined, diagramVars);
           filename = generateProcessFilename(currentFile.name);
         }
 
@@ -167,12 +179,19 @@ export const useFileOperations = (): UseFileOperationsResult => {
     setLastError(null);
 
     try {
-      // Save project config
+      // Save project config with variables
+      const projectVars: Record<string, ProcessVariable[]> = {};
+      for (const diagram of project!.diagrams) {
+        projectVars[diagram.id] = getVariablesByProject(project!.id!).filter(
+          (v) => v.scope === 'process' || v.diagramId === diagram.id
+        );
+      }
       const projectConfig = {
-        version: '1.0.0',
+        version: '1.1.0',
         exportedAt: new Date().toISOString(),
         project: {
           ...project,
+          id: project!.id,
           name: project!.name,
           version: project!.version,
           settings: project!.settings,
@@ -184,6 +203,7 @@ export const useFileOperations = (): UseFileOperationsResult => {
           folder: d.folder,
         })),
         folders: project!.folders,
+        variables: projectVars,
       };
 
       const projectFileName = `${project!.name.replace(/[^a-zA-Z0-9_-]/g, '_')}${PROJECT_EXTENSION}`;
@@ -193,11 +213,13 @@ export const useFileOperations = (): UseFileOperationsResult => {
       for (const diagram of project!.diagrams) {
         const doc = diagramDocuments[diagram.id];
         if (doc) {
+          const diagramVars = projectVars[diagram.id] || [];
           const processContent = {
-            version: '1.0.0',
+            version: '1.1.0',
             metadata: doc.metadata,
             nodes: doc.nodes,
             edges: doc.edges,
+            variables: diagramVars,
           };
           await writeFile(diagram.path, JSON.stringify(processContent, null, 2));
         }
@@ -207,11 +229,13 @@ export const useFileOperations = (): UseFileOperationsResult => {
       if (activeDiagramId && metadata) {
         const activeDiagram = project!.diagrams.find((d) => d.id === activeDiagramId);
         if (activeDiagram) {
+          const diagramVars = projectVars[activeDiagram.id] || [];
           const processContent = {
-            version: '1.0.0',
+            version: '1.1.0',
             metadata,
             nodes,
             edges,
+            variables: diagramVars,
           };
           await writeFile(activeDiagram.path, JSON.stringify(processContent, null, 2));
         }
@@ -259,20 +283,26 @@ export const useFileOperations = (): UseFileOperationsResult => {
         if (!projectExport) {
           return;
         }
-
+        const projectVars: Record<string, ProcessVariable[]> = {};
+        for (const diagram of project.diagrams) {
+          projectVars[diagram.id] = getVariablesByProject(project.id!).filter(
+            (v) => v.scope === 'process' || v.diagramId === diagram.id
+          );
+        }
         content = serializeProject(
           {
             ...projectExport.project,
             name,
           },
-          projectExport.diagrams
+          projectExport.diagrams,
+          projectVars
         );
         filename = generateProjectFilename(name);
       } else {
         if (!metadata) {
           return;
         }
-        content = serializeDiagram(nodes, edges, { ...metadata, name });
+        content = serializeDiagram(nodes, edges, { ...metadata, name }, undefined, variables);
         filename = generateProcessFilename(name);
       }
 
@@ -313,6 +343,12 @@ export const useFileOperations = (): UseFileOperationsResult => {
       const projectResult = deserializeProject(content);
       if (projectResult.success && projectResult.project) {
         loadProject(projectResult.project.project, projectResult.project.diagrams);
+
+        if (projectResult.project.variables && projectResult.project.project.id) {
+          for (const [, diagramVars] of Object.entries(projectResult.project.variables)) {
+            loadVariables(projectResult.project.project.id, diagramVars);
+          }
+        }
 
         const mainDocument =
           projectResult.project.diagrams[projectResult.project.project.main];
@@ -364,6 +400,11 @@ export const useFileOperations = (): UseFileOperationsResult => {
       if (!loaded) {
         setLastError('Failed to load diagram: exactly one Start node is required.');
         return false;
+      }
+
+      useVariableStore.getState().clearVariables();
+      if (diagram.variables && diagram.variables.length > 0) {
+        loadVariables(diagram.metadata.id, diagram.variables);
       }
 
       setCurrentFile({
@@ -510,7 +551,9 @@ export const useFileOperations = (): UseFileOperationsResult => {
         }
       }
 
+      const projectId = `proj_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
       const projectConfig = {
+        id: projectId,
         name,
         version: '1.0.0',
         main: instantiated.metadata.id,
@@ -636,6 +679,7 @@ export const useFileOperations = (): UseFileOperationsResult => {
         };
       }
 
+      const projectId = `proj_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
       const projectConfig: ProjectTemplateFile = {
         version: '1.0.0',
         templateType: 'project',
@@ -646,6 +690,7 @@ export const useFileOperations = (): UseFileOperationsResult => {
           category: 'empty',
         },
         project: {
+          id: projectId,
           name,
           version: '1.0.0',
           settings: {
@@ -799,18 +844,24 @@ export const useFileOperations = (): UseFileOperationsResult => {
       if (!projectExport) {
         return;
       }
+      const projectVars: Record<string, ProcessVariable[]> = {};
+      for (const diagram of project.diagrams) {
+        projectVars[diagram.id] = getVariablesByProject(project.id!).filter(
+          (v) => v.scope === 'process' || v.diagramId === diagram.id
+        );
+      }
 
-      const content = serializeProject(projectExport.project, projectExport.diagrams);
+      const content = serializeProject(projectExport.project, projectExport.diagrams, projectVars);
       const filename = generateProjectFilename(projectExport.project.name);
       downloadFile(content, filename);
       return;
     }
 
     if (!metadata) return;
-    const content = serializeDiagram(nodes, edges, metadata);
+    const content = serializeDiagram(nodes, edges, metadata, undefined, variables);
     const filename = generateProcessFilename(metadata.name);
     downloadFile(content, filename);
-  }, [edges, getProjectExport, metadata, nodes, project]);
+  }, [edges, getProjectExport, metadata, nodes, project, variables, getVariablesByProject]);
 
   return {
     isSaving,

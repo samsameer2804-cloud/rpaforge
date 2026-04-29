@@ -41,6 +41,7 @@ export interface ProjectTemplateFile {
   templateType: 'project';
   metadata: ProjectTemplateMetadata;
   project: {
+    id?: string;
     name: string;
     version: string;
     settings: {
@@ -50,6 +51,7 @@ export interface ProjectTemplateFile {
   };
   diagrams: ProjectDiagramReference[];
   folders?: string[];
+  variables?: Record<string, unknown>;
 }
 
 export interface TemplateNode {

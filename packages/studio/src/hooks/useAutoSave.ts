@@ -4,6 +4,7 @@ import { useProcessMetadataStore } from '../stores/processMetadataStore';
 import { useFileStore } from '../stores/fileStore';
 import { useDiagramStore } from '../stores/diagramStore';
 import { useProjectFsStore } from '../stores/projectFsStore';
+import { useVariableStore } from '../stores/variableStore';
 import { serializeDiagram } from '../utils/fileUtils';
 import { config } from '../config/app.config';
 import { createLogger } from '../utils/logger';
@@ -52,6 +53,7 @@ export function useAutoSave(options: AutoSaveOptions = {}): {
   const saveDiagramDocument = useDiagramStore((state) => state.saveDiagramDocument);
   const projectPath = useProjectFsStore((state) => state.projectPath);
   const writeFile = useProjectFsStore((state) => state.writeFile);
+  const variables = useVariableStore((state) => state.variables);
 
   const lastSaveRef = useRef<string>('');
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -61,7 +63,10 @@ export function useAutoSave(options: AutoSaveOptions = {}): {
       return;
     }
 
-    const content = serializeDiagram(nodes, edges, metadata);
+    const diagramVars = project?.id
+      ? variables.filter((v) => v.projectId === project.id && (v.scope === 'process' || v.diagramId === activeDiagramId))
+      : [];
+    const content = serializeDiagram(nodes, edges, metadata, undefined, diagramVars);
     const contentHash = simpleHash(content);
 
     if (contentHash === lastSaveRef.current) {
@@ -75,10 +80,11 @@ export function useAutoSave(options: AutoSaveOptions = {}): {
         const activeDiagram = project.diagrams.find((d) => d.id === activeDiagramId);
         if (activeDiagram) {
           const processContent = {
-            version: '1.0.0',
+            version: '1.1.0',
             metadata,
             nodes,
             edges,
+            variables: diagramVars,
           };
           await writeFile(activeDiagram.path, JSON.stringify(processContent, null, 2));
           
