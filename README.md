@@ -118,33 +118,23 @@ rpaforge/
 
 - [Getting Started](docs/getting-started/installation.md)
 - [Quick Start](docs/getting-started/quick-start.md)
-- [Architecture](docs/wiki/Architecture.md)
-- [Activity Types & SDK](docs/wiki/Activity-Types-and-SDK.md)
-- [Developer Guide](docs/wiki/Home.md)
+- [Developer Guide](AGENTS.md)
 - [Contribution Guidelines](CONTRIBUTING.md)
 
 ## Roadmap
 
-### v0.2.0 - Current Release (Q2 2026)
-- ✅ Core engine with debugging
-- ✅ IPC bridge for Electron-Python communication
-- ✅ DesktopUI library (pywinauto)
-- ✅ WebUI library (Playwright)
-- ✅ File operations (Excel, CSV, file management)
-- ✅ Database integration (SQLAlchemy)
-- ✅ OCR support (Tesseract, EasyOCR)
-- ✅ Secure credentials management
-- ✅ Visual process designer (Electron + React)
-- ✅ Integrated debugger UI
-- ✅ Python bridge server
-- ✅ State management (Zustand)
-- ✅ Code generation to Python
+### v0.3.1 - Security Patch (Current, April 2026)
+- ✅ Critical security fixes (SQL injection, path traversal, getattr)
+- ✅ IndexedDB infrastructure for autosave and variables
+- ✅ Ruff-based Python validation with inline errors
+- ✅ Project-scoped variables
+- ✅ Persistent logging with file rotation
 
-### v0.3.0 - Enhanced Features (Q3 2026)
+### v0.4.0 - Enhanced Features (Planned)
 - [ ] Smart activity recorder
 - [ ] Selector extraction and healing
 - [ ] Sub-diagram support
-- [ ] Variable explorer
+- [ ] Variable explorer improvements
 - [ ] Execution history
 
 ### v0.4.0 - Advanced Features (Q4 2026)

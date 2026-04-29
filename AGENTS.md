@@ -6,43 +6,48 @@ Essential information for AI coding agents working on RPAForge.
 
 RPAForge is an Open Source RPA Studio. It provides a visual process designer, recorder, debugger, and orchestrator for RPA automation.
 
-**Current Version**: v0.2.0-dev (Core Engine & Libraries Complete)
+**Current Version**: v0.3.1
 
-**Status**: Active Development - v0.3.0 Planned
+**Status**: Active Development - v0.4.0 Planned
 
 ## Build/Lint/Test Commands
 
 ### Quick Start (Full Setup)
 
 ```bash
-# 1. Install development dependencies
-uv pip install -r requirements-dev.txt
-pre-commit install
-
-# 2. Install Python packages in development mode
+# 1. Install Python packages in development mode (use uv for speed)
 uv pip install -e packages/core
 uv pip install -e packages/libraries
 
-# 3. Install Studio UI dependencies
+# 2. Install Studio UI dependencies
 cd packages/studio && pnpm install && cd ../..
 
-# 4. Verify installation
-pytest packages/core/tests -v          # Python tests (4 test files)
-cd packages/studio && pnpm test -- --run && cd ../..  # UI tests (8 test files)
+# 3. Verify installation
+pytest packages/core/tests -v          # Python tests
+cd packages/studio && pnpm test        # UI tests
+```
 
-## Architecture Improvements
+## Security (v0.3.1)
 
-RPAForge has been refactored for improved stability, security, and performance:
+Critical security vulnerabilities have been addressed:
 
-### Python Core Engine (v0.3.0)
-- **Subprocess-based timeout handling**: Activities now run in isolated subprocesses to prevent resource leaks when timeouts occur
-- **Safe condition evaluator**: Breakpoint conditions are now evaluated using AST-based parsing instead of `eval()`, eliminating security risks
-- **Non-blocking retry**: Reduced minimum retry delay to 1ms for better performance
+- **SQL Injection Prevention**: Table name validation in Database library
+- **Unsafe getattr Prevention**: Library/activity name validation in Executor
+- **Path Traversal Prevention**: Symlink validation in File library
+- **Null Pointer Prevention**: Window null check in Electron handlers
+- **Race Condition Prevention**: File descriptor operations for log writing
 
-### Electron Security (v0.3.0)
-- **Content Security Policy (CSP)**: Production builds now include strict CSP headers
-- **IPC payload validation**: All IPC handlers validate incoming payloads for security
-- **Path traversal protection**: File system operations validate paths to prevent directory traversal attacks
+## Architecture
+
+### Python Core Engine
+- **Subprocess-based timeout handling**: Activities run in isolated subprocesses
+- **Safe condition evaluator**: AST-based parsing instead of `eval()`
+- **Non-blocking retry**: Minimum 1ms retry delay
+
+### Electron Security
+- **Content Security Policy (CSP)**: Strict CSP headers in production
+- **IPC payload validation**: All handlers validate incoming data
+- **Path traversal protection**: File operations validated
 
 ## Project Structure
 

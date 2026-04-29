@@ -10,10 +10,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Orchestrator package structure (control tower backend)
 
-### Changed
-- Updated dependencies to latest versions
+## [0.3.1] - 2026-04-29
 
-## [0.2.0] - 2026-04-24
+### Security (Critical)
+- SQL injection prevention in Database library (table name validation)
+- Unsafe getattr prevention in Executor (library/activity name validation)
+- Path traversal prevention in File library (symlink validation)
+- Null pointer prevention in Electron handlers (window null check)
+- File system race condition fix (file descriptor operations)
+
+### Added
+- IndexedDB wrapper for large data storage (autosave, variables)
+- Project-scoped variables and persistent logging
+- Ruff-based Python syntax validation with inline error highlighting
+- Python code formatting with ruff integration
+- Storage monitoring UI with IndexedDB support
+- Welcome screen for first-time users
+- ConfirmDialog component for destructive actions
+
+### Fixed
+- Variable filtering by project in PropertyPanel and VariablePanel
+- Preload script CommonJS format for Electron
+- Ruff output parsing for code validation
+- TypeScript errors in tests and components
+- IndexedDB error handling and logging
+- CI: switched from npm/pip to pnpm/uv for faster installs
+
+### Changed
+- CI: Python 3.13 for Black formatting
+- CI: Node.js 24 for TypeScript analysis
+
+## [0.3.0] - 2026-04-24
 
 ### Added
 - Core engine with process runner and debugging
