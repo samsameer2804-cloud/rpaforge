@@ -13,10 +13,48 @@ if (typeof window !== 'undefined') {
     }) as typeof window.cancelIdleCallback;
   }
   if (typeof window.indexedDB === 'undefined') {
-    const mockDB: Record<string, unknown> = {};
+    const mockStore = () => ({
+      put: () => ({ onsuccess: null, onerror: null }),
+      get: () => ({ onsuccess: null, onerror: null, result: undefined }),
+      delete: () => ({ onsuccess: null, onerror: null }),
+      clear: () => ({ onsuccess: null, onerror: null }),
+      getAll: () => ({ onsuccess: null, onerror: null, result: [] }),
+      index: () => ({
+        getAll: () => ({ onsuccess: null, onerror: null, result: [] }),
+        openCursor: () => ({ onsuccess: null, onerror: null }),
+      }),
+      createIndex: () => {},
+    });
+    const mockDB = {
+      objectStoreNames: { contains: () => false },
+      createObjectStore: () => mockStore(),
+      transaction: () => ({
+        objectStore: mockStore,
+        oncomplete: null,
+        onerror: null,
+        onabort: null,
+      }),
+      oncomplete: null,
+      onerror: null,
+    };
     window.indexedDB = {
-      open: () => ({ onsuccess: null, onerror: null, result: mockDB }),
-      deleteDatabase: () => ({ onsuccess: null, onerror: null }),
+      open: (name: string, version: number) => {
+        const req = {
+          onsuccess: null as (() => void) | null,
+          onerror: null as (() => void) | null,
+          result: mockDB,
+        };
+        setTimeout(() => {
+          if (req.onsuccess) {
+            req.onsuccess();
+          }
+        }, 0);
+        return req;
+      },
+      deleteDatabase: () => ({
+        onsuccess: null as (() => void) | null,
+        onerror: null as (() => void) | null,
+      }),
     } as unknown as IDBFactory;
   }
 }

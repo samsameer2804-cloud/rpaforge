@@ -20,32 +20,43 @@ function openDatabase(): Promise<IDBDatabase> {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
     request.onerror = () => {
-      reject(new Error('Failed to open database'));
+      const error = request.error;
+      console.error('[IndexedDB] Failed to open database:', error);
+      reject(new Error(`Failed to open database: ${error?.message || 'Unknown error'}`));
     };
 
     request.onsuccess = () => {
       dbInstance = request.result;
+      console.log('[IndexedDB] Database opened successfully');
       resolve(dbInstance);
     };
 
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
+      console.log('[IndexedDB] Upgrade needed, creating stores');
 
       if (!db.objectStoreNames.contains(STORES.AUTOSAVE)) {
         const autosaveStore = db.createObjectStore(STORES.AUTOSAVE, { keyPath: 'id' });
         autosaveStore.createIndex('by-timestamp', 'timestamp');
+        console.log('[IndexedDB] Created autosave store');
       }
 
       if (!db.objectStoreNames.contains(STORES.VARIABLES)) {
         const variablesStore = db.createObjectStore(STORES.VARIABLES, { keyPath: 'id' });
         variablesStore.createIndex('by-project', 'projectId');
         variablesStore.createIndex('by-diagram', 'diagramId');
+        console.log('[IndexedDB] Created variables store');
       }
 
       if (!db.objectStoreNames.contains(STORES.DIAGRAMS)) {
         const diagramsStore = db.createObjectStore(STORES.DIAGRAMS, { keyPath: 'id' });
         diagramsStore.createIndex('by-project', 'projectId');
+        console.log('[IndexedDB] Created diagrams store');
       }
+    };
+
+    request.onblocked = () => {
+      console.warn('[IndexedDB] Database blocked - another tab may have it open');
     };
   });
 }
