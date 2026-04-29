@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { FiPlus, FiMoreHorizontal, FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
+import { FiPlus, FiMoreHorizontal, FiAlertCircle, FiCheckCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 import type { VariableInfo } from './VariablePicker';
 import PythonCodeEditor from './PythonCodeEditor';
 
@@ -110,6 +110,7 @@ const ExpressionEditor: React.FC<ExpressionEditorProps> = ({
   const [cursorIndex, setCursorIndex] = useState(0);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const [showCodeEditor, setShowCodeEditor] = useState(false);
+  const [showSyntaxHelp, setShowSyntaxHelp] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const autocompleteRef = useRef<HTMLDivElement>(null);
 
@@ -301,7 +302,7 @@ const ExpressionEditor: React.FC<ExpressionEditorProps> = ({
             onSelect={handleSelectionChange}
             onKeyUp={handleSelectionChange}
             onKeyDown={handleKeyDown}
-            placeholder={placeholder}
+            placeholder={placeholder || '${variableName}'}
             disabled={disabled}
             rows={rows}
             title={title}
@@ -317,17 +318,53 @@ const ExpressionEditor: React.FC<ExpressionEditorProps> = ({
             </div>
           )}
         </div>
-        {showEditorButton && (
-          <button
-            type="button"
-            className="px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 disabled:opacity-50 self-start"
-            onClick={() => setShowCodeEditor(true)}
-            disabled={disabled}
-            title="Open in editor"
-          >
-            <FiMoreHorizontal className="w-4 h-4" />
-          </button>
-        )}
+        <div className="flex flex-col gap-1 self-start">
+          <div className="relative">
+            <button
+              type="button"
+              className="px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-400 hover:text-indigo-500 transition-colors"
+              onClick={() => setShowSyntaxHelp(v => !v)}
+              title="Expression syntax help"
+            >
+              <FiHelpCircle className="w-4 h-4" />
+            </button>
+            {showSyntaxHelp && (
+              <div className="absolute right-0 top-8 z-50 w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-lg p-3 text-xs">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-semibold text-slate-700 dark:text-slate-200">Expression syntax</span>
+                  <button onClick={() => setShowSyntaxHelp(false)} className="text-slate-400 hover:text-slate-600">
+                    <FiX className="w-3 h-3" />
+                  </button>
+                </div>
+                <div className="space-y-1.5">
+                  <div>
+                    <code className="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-1 rounded">{'${name}'}</code>
+                    <span className="text-slate-500 ml-1">Variable syntax</span>
+                  </div>
+                  <div>
+                    <code className="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-1 rounded">{'${obj.property}'}</code>
+                    <span className="text-slate-500 ml-1">Access property</span>
+                  </div>
+                  <div>
+                    <code className="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-1 rounded">{'${a + b}'}</code>
+                    <span className="text-slate-500 ml-1">Arithmetic</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          {showEditorButton && (
+            <button
+              type="button"
+              className="px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 disabled:opacity-50"
+              onClick={() => setShowCodeEditor(true)}
+              disabled={disabled}
+              title="Open in editor"
+            >
+              <FiMoreHorizontal className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       {validate && !validationResult.isValid && validationResult.errors.length > 0 && (
