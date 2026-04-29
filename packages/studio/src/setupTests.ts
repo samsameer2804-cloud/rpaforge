@@ -4,8 +4,13 @@ if (typeof window !== 'undefined') {
     sessionStorage.clear();
   };
   if (!window.requestIdleCallback) {
-    window.requestIdleCallback = ((cb: () => void) => setTimeout(cb, 0)) as typeof window.requestIdleCallback;
-    window.cancelIdleCallback = ((id: ReturnType<typeof setTimeout>) => clearTimeout(id)) as typeof window.cancelIdleCallback;
+    const originalSetTimeout = window.setTimeout;
+    window.requestIdleCallback = ((cb: IdleRequestCallback) => {
+      return originalSetTimeout(() => cb({ didTimeout: false, timeRemaining: () => 50 }), 0) as unknown as number;
+    }) as typeof window.requestIdleCallback;
+    window.cancelIdleCallback = ((handle: number) => {
+      clearTimeout(handle as unknown as ReturnType<typeof setTimeout>);
+    }) as typeof window.cancelIdleCallback;
   }
   if (typeof window.indexedDB === 'undefined') {
     const mockDB: Record<string, unknown> = {};
