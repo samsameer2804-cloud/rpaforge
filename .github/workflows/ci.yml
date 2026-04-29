@@ -55,18 +55,14 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv venv
           uv pip install -r requirements-dev.txt
           uv pip install -e packages/core
           uv pip install -e packages/libraries
 
       - name: Run tests
-        run: .venv/bin/pytest packages/core/tests -v --tb=short --cov=src --cov-report=xml
-        working-directory: packages/core
-
-      - name: Run library tests
-        run: .venv/bin/pytest tests -v --tb=short
-        working-directory: packages/libraries
+        run: |
+          uvx pytest packages/core/tests -v --tb=short --cov=src --cov-report=xml
+          uvx pytest packages/libraries/tests -v --tb=short
 
       - name: Upload coverage
         uses: codecov/codecov-action@v6
