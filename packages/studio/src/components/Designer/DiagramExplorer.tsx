@@ -200,7 +200,7 @@ const DiagramExplorer: React.FC<DiagramExplorerProps> = ({
       case 'main':
         return <FiFile className="w-4 h-4 text-green-500" />;
       case 'sub-diagram':
-        return <FiPhone className="w-4 h-4 text-indigo-500" />;
+        return <FiPhone className="w-4 h-4 text-indigo-500" title="Sub-diagram: A reusable process callable from other diagrams" />;
       case 'library':
         return <FiFile className="w-4 h-4 text-purple-500" />;
       default:

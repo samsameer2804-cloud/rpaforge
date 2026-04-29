@@ -37,7 +37,7 @@ const SubDiagramCallBlock: React.FC<SubDiagramCallBlockProps> = ({
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full" title="Sub-diagram call: runs a reusable process and returns results to this diagram">
       <div className="flex items-center gap-2 mb-2">
         <FiPhone className="w-4 h-4 text-indigo-500" />
         <span className="font-medium text-sm text-slate-700 dark:text-slate-300">
