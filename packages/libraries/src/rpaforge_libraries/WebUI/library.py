@@ -580,7 +580,7 @@ class WebUI:
         }
 
     @activity(name="Inspect Page", category="Web")
-    def inspect_page(self, include_frames: bool = True) -> dict[str, Any]:
+    def inspect_page(self, _include_frames: bool = True) -> dict[str, Any]:
         self._ensure_page()
         elements = self._page.evaluate("""() => {
             function getXPath(el) {
