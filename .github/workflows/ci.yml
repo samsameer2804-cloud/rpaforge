@@ -24,8 +24,11 @@ jobs:
       - name: Run Ruff
         run: uvx ruff check packages/ --output-format=github
 
-      - name: Check Black formatting
-        run: uvx black==25.1.0 --check packages/
+      - name: Check Ruff formatting
+        run: uvx ruff format --check packages/
+
+      - name: Check Ruff formatting
+        run: uvx ruff format --check packages/
 
   test:
     name: Test (Python ${{ matrix.python-version }}, ${{ matrix.os }})
