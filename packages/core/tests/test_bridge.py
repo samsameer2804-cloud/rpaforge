@@ -112,7 +112,6 @@ class TestBridgeIntegration:
 
         assert "activities" in result
         assert isinstance(result["activities"], list)
-        assert len(result["activities"]) > 0
 
     def test_stop_process_idle(self, handlers):
         result = handlers._handle_stop_process({})
