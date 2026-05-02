@@ -19,7 +19,7 @@ jobs:
           python-version: '3.12'
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v8
 
       - name: Install dependencies
         run: uv pip install --system -e packages/core pytest pytest-asyncio pytest-cov
@@ -47,7 +47,7 @@ jobs:
           python-version: '3.12'
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v8
 
       - name: Install dependencies
         run: uv pip install --system -e packages/libraries pytest pytest-cov
@@ -75,7 +75,7 @@ jobs:
           python-version: '3.12'
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v8
 
       - name: Install and run ruff
         run: |
