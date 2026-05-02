@@ -136,6 +136,40 @@ export interface ErrorEvent {
   details?: string;
 }
 
+export interface SpyElementCapturedEvent {
+  type: 'spy:elementCaptured';
+  timestamp: string;
+  element: PickedElement;
+  mode: 'web' | 'desktop';
+}
+
+export interface SpyModeChangedEvent {
+  type: 'spy:modeChanged';
+  timestamp: string;
+  active: boolean;
+  mode?: 'web' | 'desktop';
+}
+
+export interface PickedElement {
+  tag: string;
+  id: string | null;
+  classes: string[];
+  text: string | null;
+  xpath: string;
+  cssPath: string;
+  reliableSelector?: {
+    type: string;
+    value: string;
+    reliability: number;
+  };
+  rect?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+}
+
 export type BridgeEvent =
   | BridgeStateEvent
   | LogEvent
@@ -149,7 +183,9 @@ export type BridgeEvent =
   | CallStackChangedEvent
   | KeywordStartedEvent
   | KeywordFinishedEvent
-  | ErrorEvent;
+  | ErrorEvent
+  | SpyElementCapturedEvent
+  | SpyModeChangedEvent;
 
 export type BridgeEventType = BridgeEvent['type'];
 

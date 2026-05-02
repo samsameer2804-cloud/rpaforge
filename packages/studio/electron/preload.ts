@@ -1,4 +1,11 @@
 import { contextBridge, ipcRenderer } from 'electron';
+import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// ESM polyfill for __dirname in preload
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 import type { StudioAPI, LogEntry } from '../src/types/ipc-contracts';
 import type { BridgeEvent, FileSystemEvent } from '../src/types/events';
 
@@ -26,6 +33,10 @@ const IPC_CHANNELS = {
   DEBUGGER_CONTINUE: 'debugger:continue',
   DEBUGGER_GET_VARIABLES: 'debugger:getVariables',
   DEBUGGER_GET_CALL_STACK: 'debugger:getCallStack',
+  SPY_START: 'spy_start',
+  SPY_STOP: 'spy_stop',
+  SPY_CAPTURE_WEB: 'spy:captureWeb',
+  SPY_CAPTURE_DESKTOP: 'spy:captureDesktop',
   DIALOG_SHOW_OPEN: 'dialog:showOpen',
   DIALOG_SHOW_SAVE: 'dialog:showSave',
   EDITOR_FORMAT_CODE: 'editor:formatCode',
@@ -58,11 +69,26 @@ const api: StudioAPI = {
     getStatus: () => ipcRenderer.invoke(IPC_CHANNELS.BRIDGE_GET_STATUS),
     send: (method, params) => ipcRenderer.invoke(IPC_CHANNELS.BRIDGE_SEND, method, params),
     onEvent: (listener) => {
-      const handler = (_: unknown, event: BridgeEvent) => {
+      const bridgeHandler = (_: unknown, event: BridgeEvent) => {
+        console.log('preload: BRIDGE_EVENT received', event.type);
         listener(event);
       };
-      ipcRenderer.on(IPC_CHANNELS.BRIDGE_EVENT, handler);
-      return () => ipcRenderer.removeListener(IPC_CHANNELS.BRIDGE_EVENT, handler);
+      const spyElementHandler = (_: unknown, data: { element: unknown; mode: string }) => {
+        console.log('preload: spy:elementCaptured received', data);
+        listener({ type: 'spy:elementCaptured', ...data } as BridgeEvent);
+      };
+      const spyModeHandler = (_: unknown, data: { active: boolean }) => {
+        console.log('preload: spy:modeChanged received', data);
+        listener({ type: 'spy:modeChanged', ...data } as BridgeEvent);
+      };
+      ipcRenderer.on(IPC_CHANNELS.BRIDGE_EVENT, bridgeHandler);
+      ipcRenderer.on('spy:elementCaptured', spyElementHandler as (...args: unknown[]) => void);
+      ipcRenderer.on('spy:modeChanged', spyModeHandler as (...args: unknown[]) => void);
+      return () => {
+        ipcRenderer.removeListener(IPC_CHANNELS.BRIDGE_EVENT, bridgeHandler);
+        ipcRenderer.removeListener('spy:elementCaptured', spyElementHandler as (...args: unknown[]) => void);
+        ipcRenderer.removeListener('spy:modeChanged', spyModeHandler as (...args: unknown[]) => void);
+      };
     },
   },
 
@@ -75,6 +101,15 @@ const api: StudioAPI = {
     pauseProcess: () => ipcRenderer.invoke(IPC_CHANNELS.ENGINE_PAUSE_PROCESS),
     resumeProcess: () => ipcRenderer.invoke(IPC_CHANNELS.ENGINE_RESUME_PROCESS),
     getActivities: () => ipcRenderer.invoke(IPC_CHANNELS.ENGINE_GET_ACTIVITIES),
+  },
+
+  spy: {
+    startCapture: (mode: string) => ipcRenderer.invoke(IPC_CHANNELS.SPY_START, mode),
+    stopCapture: () => ipcRenderer.invoke(IPC_CHANNELS.SPY_STOP),
+    captureWebElement: (x: number, y: number) => ipcRenderer.invoke(IPC_CHANNELS.SPY_CAPTURE_WEB, x, y),
+    captureDesktopElement: (x: number, y: number) => ipcRenderer.invoke(IPC_CHANNELS.SPY_CAPTURE_DESKTOP, x, y),
+    getMousePosition: () => ipcRenderer.invoke('spy:getMousePosition'),
+    getElementAtPosition: (x: number, y: number, mode: string) => ipcRenderer.invoke('spy:getElementAtPosition', x, y, mode),
   },
 
   debugger: {

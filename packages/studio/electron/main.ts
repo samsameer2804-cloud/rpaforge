@@ -1,21 +1,29 @@
-import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, globalShortcut, screen } from 'electron';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 import * as fsp from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 import chokidar, { type FSWatcher } from 'chokidar';
 import { PythonBridge } from './python-bridge';
 import { IPC_CHANNELS } from '../src/types/ipc-contracts';
-import type { BridgeState, BridgeStatus, FsEvent, LogEntry } from '../src/types/ipc-contracts';
-import type { OpenDialogOptions, SaveDialogOptions, FileInfo } from '../src/types/ipc-contracts';
+import type { LogEntry, OpenDialogOptions, SaveDialogOptions, FileInfo } from '../src/types/ipc-contracts';
+import type { BridgeState, BridgeStatus, FsEvent } from '../src/types/events';
 import { createLogger } from '../src/utils/logger';
 import { config } from '../src/config/app.config';
 import { validateMethodName, validateSafeString, validateFilePath, validateIPCPayload, setProjectRoot, getProjectRoot } from './ipc-validator';
+
+// ESM polyfill for __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 let mainWindow: BrowserWindow | null = null;
 let pythonBridge: PythonBridge | null = null;
 const fsWatchers: Map<string, FSWatcher> = new Map();
 let bridgeEventCleanup: (() => void) | null = null;
 const debouncedSend: Map<string, NodeJS.Timeout> = new Map();
+let spyOverlayWindow: BrowserWindow | null = null;
+let isSpyModeActive = false;
+let spyMode: 'web' | 'desktop' = 'desktop';
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 const logger = createLogger('electron-main');
@@ -46,12 +54,7 @@ async function writeLogToFile(entry: LogEntry): Promise<void> {
       await rotateLogs();
     }
 
-    const fd = await fsp.open(LOG_FILE, 'a');
-    try {
-      await fsp.write(fd, line, undefined, 'utf-8');
-    } finally {
-      await fsp.close(fd);
-    }
+    await fsp.appendFile(LOG_FILE, line, 'utf-8');
   } catch {
     // Ignore write errors
   }
@@ -151,7 +154,7 @@ function createWindow() {
       preload: preloadPath,
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true,
+      sandbox: false,
     },
     title: 'RPAForge Studio',
     autoHideMenuBar: true,
@@ -202,6 +205,97 @@ function createWindow() {
 
   mainWindow.on('closed', () => {
     mainWindow = null;
+  });
+}
+
+function createSpyOverlay(): BrowserWindow {
+  const display = screen.getPrimaryDisplay();
+  const { width, height } = display.workAreaSize;
+  logger.info(`Creating spy overlay: ${width}x${height}`);
+
+  spyOverlayWindow = new BrowserWindow({
+    width,
+    height,
+    x: 0,
+    y: 0,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: false,
+    focusable: false,
+    hasShadow: false,
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+
+  const overlayPath = path.join(__dirname, '..', '..', 'dist', 'spy-overlay.html');
+  logger.info(`Loading overlay from: ${overlayPath}`);
+  spyOverlayWindow.loadFile(overlayPath);
+
+  spyOverlayWindow.webContents.on('did-finish-load', () => {
+    logger.info('Spy overlay loaded successfully');
+  });
+
+  spyOverlayWindow.webContents.on('did-fail-load', (_, errorCode, errorDesc) => {
+    logger.error(`Spy overlay failed to load: ${errorCode} - ${errorDesc}`);
+  });
+
+  spyOverlayWindow.setIgnoreMouseEvents(true, { forward: true });
+
+  return spyOverlayWindow;
+}
+
+function setupSpyShortcuts() {
+  globalShortcut.register('Control+Shift+S', () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+
+    isSpyModeActive = !isSpyModeActive;
+
+    if (isSpyModeActive) {
+      mainWindow.webContents.send('spy:modeChanged', { active: true });
+      if (!spyOverlayWindow || spyOverlayWindow.isDestroyed()) {
+        createSpyOverlay();
+      }
+    } else {
+      mainWindow.webContents.send('spy:modeChanged', { active: false });
+      if (spyOverlayWindow && !spyOverlayWindow.isDestroyed()) {
+        spyOverlayWindow.close();
+        spyOverlayWindow = null;
+      }
+    }
+  });
+
+  globalShortcut.register('Control+Shift+C', async () => {
+    if (!isSpyModeActive || !mainWindow || mainWindow.isDestroyed()) return;
+
+    try {
+      const pos = screen.getCursorScreenPoint();
+      const method = spyMode === 'desktop' ? 'captureDesktopElement' : 'captureWebElement';
+      const element = await pythonBridge?.sendRequest(method, { x: pos.x, y: pos.y });
+
+      if (element) {
+        mainWindow.webContents.send('spy:elementCaptured', { element, mode: spyMode });
+      }
+    } catch (err) {
+      logger.error('Failed to capture element on shortcut', err);
+    }
+  });
+
+  globalShortcut.register('Escape', () => {
+    if (!isSpyModeActive) return;
+
+    isSpyModeActive = false;
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('spy:modeChanged', { active: false });
+    }
+    if (spyOverlayWindow && !spyOverlayWindow.isDestroyed()) {
+      spyOverlayWindow.close();
+      spyOverlayWindow = null;
+    }
+    logger.info('Spy mode stopped by Escape');
   });
 }
 
@@ -285,6 +379,94 @@ function setupIPCHandlers() {
 
   ipcMain.handle(IPC_CHANNELS.ENGINE_GET_ACTIVITIES, async () => {
     return pythonBridge?.sendRequest('getActivities', {});
+  });
+
+  ipcMain.handle(IPC_CHANNELS.SPY_CAPTURE_WEB, async (event, x: number, y: number) => {
+    validateIPCPayload(event, 'spy:captureWeb', { x, y });
+    return pythonBridge?.sendRequest('captureWebElement', { x, y });
+  });
+
+  ipcMain.handle(IPC_CHANNELS.SPY_CAPTURE_DESKTOP, async (event, x: number, y: number) => {
+    validateIPCPayload(event, 'spy:captureDesktop', { x, y });
+    return pythonBridge?.sendRequest('captureDesktopElement', { x, y });
+  });
+
+  ipcMain.handle('spy_start', (_, mode: 'web' | 'desktop') => {
+    spyMode = mode;
+    isSpyModeActive = true;
+    if (!spyOverlayWindow || spyOverlayWindow.isDestroyed()) {
+      createSpyOverlay();
+    }
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('spy:modeChanged', { active: true, mode });
+    }
+    logger.info(`Spy mode started: ${mode}`);
+    return { success: true };
+  });
+
+  ipcMain.handle('spy_stop', () => {
+    isSpyModeActive = false;
+    if (spyOverlayWindow && !spyOverlayWindow.isDestroyed()) {
+      spyOverlayWindow.close();
+      spyOverlayWindow = null;
+    }
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('spy:modeChanged', { active: false });
+    }
+    logger.info('Spy mode stopped');
+    return { success: true };
+  });
+
+  ipcMain.handle('spy:clickAtPosition', async (_, x: number, y: number) => {
+    if (!isSpyModeActive) {
+      return { success: false, error: 'Spy mode not active' };
+    }
+
+    try {
+      const method = spyMode === 'desktop' ? 'captureDesktopElement' : 'captureWebElement';
+      const element = await pythonBridge?.sendRequest(method, { x, y });
+
+      if (element) {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('spy:elementCaptured', { element, mode: spyMode });
+        }
+        return { success: true, element };
+      }
+      return { success: false, error: 'No element found at position' };
+    } catch (err) {
+      logger.error('Failed to capture element', err);
+      return { success: false, error: String(err) };
+    }
+  });
+
+  ipcMain.handle('spy:getElementAtMouse', async (_, mode: 'web' | 'desktop') => {
+    if (!isSpyModeActive) {
+      return null;
+    }
+
+    try {
+      const pos = screen.getCursorScreenPoint();
+      const method = mode === 'desktop' ? 'captureDesktopElement' : 'captureWebElement';
+      return await pythonBridge?.sendRequest(method, { x: pos.x, y: pos.y });
+    } catch (err) {
+      logger.error('Failed to get element at mouse', err);
+      return null;
+    }
+  });
+
+  ipcMain.handle('spy:getMousePosition', () => {
+    const pos = screen.getCursorScreenPoint();
+    return { x: pos.x, y: pos.y };
+  });
+
+  ipcMain.handle('spy:getElementAtPosition', async (_, x: number, y: number, mode: 'web' | 'desktop') => {
+    try {
+      const method = mode === 'desktop' ? 'captureDesktopElement' : 'captureWebElement';
+      return await pythonBridge?.sendRequest(method, { x, y });
+    } catch (err) {
+      logger.error('Failed to get element at position', err);
+      return null;
+    }
   });
 
   ipcMain.handle(IPC_CHANNELS.DEBUGGER_SET_BREAKPOINT, async (event, file: string, line: number, condition?: string) => {
@@ -559,6 +741,7 @@ function setupIPCHandlers() {
 
 app.whenReady().then(async () => {
   setupIPCHandlers();
+  setupSpyShortcuts();
   await initializePythonBridge();
   createWindow();
 

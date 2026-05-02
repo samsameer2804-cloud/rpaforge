@@ -57,8 +57,13 @@ database = [
 keystore = [
     "keyring>=24.0",
 ]
+spy = [
+    "uiautomation>=3.0",
+    "websocket-client>=1.0",
+    "pynput>=1.7",
+]
 all = [
-    "rpaforge-libraries[desktop,web,ocr,excel,database,keystore]",
+    "rpaforge-libraries[desktop,web,ocr,excel,database,keystore,spy]",
 ]
 dev = [
     "pytest>=7.0",

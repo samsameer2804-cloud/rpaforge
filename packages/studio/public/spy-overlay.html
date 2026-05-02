@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Spy Overlay</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    #highlight {
+      position: fixed;
+      border: 4px solid #FF6B00;
+      background: rgba(255, 107, 0, 0.2);
+      pointer-events: none;
+      display: none;
+      z-index: 9999;
+      box-shadow: 0 0 20px rgba(255, 107, 0, 0.6);
+      transition: all 0.05s ease-out;
+    }
+    #tooltip {
+      position: fixed;
+      padding: 14px 18px;
+      background: rgba(255, 255, 255, 0.98);
+      color: #000000;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 14px;
+      border-radius: 10px;
+      pointer-events: none;
+      display: none;
+      z-index: 10000;
+      max-width: 400px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      border: 3px solid #FF6B00;
+    }
+    #tooltip .header {
+      color: #FF6B00;
+      font-weight: 800;
+      font-size: 18px;
+      margin-bottom: 10px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #FF6B00;
+    }
+    #tooltip .info-row {
+      display: flex;
+      justify-content: space-between;
+      margin: 6px 0;
+      font-size: 13px;
+    }
+    #tooltip .info-label {
+      color: #666;
+      font-weight: 600;
+    }
+    #tooltip .info-value {
+      color: #000;
+      font-weight: 500;
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    #tooltip .selector-box {
+      background: #1a1a2e;
+      color: #00FF00;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 13px;
+      padding: 12px 14px;
+      border-radius: 6px;
+      margin-top: 12px;
+      word-break: break-all;
+      border: 1px solid #00FF00;
+    }
+    #tooltip .hint {
+      color: #888;
+      font-size: 12px;
+      margin-top: 14px;
+      text-align: center;
+      padding-top: 10px;
+      border-top: 1px solid #ddd;
+    }
+    #status {
+      position: fixed;
+      bottom: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 18px 36px;
+      background: #FF6B00;
+      color: #FFFFFF;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 18px;
+      border-radius: 30px;
+      display: none;
+      z-index: 10001;
+      font-weight: 800;
+      box-shadow: 0 0 30px rgba(255, 107, 0, 0.6);
+    }
+    #status.show { display: block; }
+  </style>
+</head>
+<body>
+  <div id="highlight"></div>
+  <div id="tooltip">
+    <div class="header" id="header"></div>
+    <div class="info-row">
+      <span class="info-label">ID:</span>
+      <span class="info-value" id="elId">-</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Text:</span>
+      <span class="info-value" id="elText">-</span>
+    </div>
+    <div class="selector-box" id="selector"></div>
+    <div class="hint">Ctrl+Shift+C = захватить | Esc = выход</div>
+  </div>
+  <div id="status"></div>
+  
+  <script>
+    const hl = document.getElementById('highlight');
+    const tt = document.getElementById('tooltip');
+    const header = document.getElementById('header');
+    const elId = document.getElementById('elId');
+    const elText = document.getElementById('elText');
+    const sel = document.getElementById('selector');
+    const status = document.getElementById('status');
+    let timer = null;
+    let active = true;
+
+    status.textContent = 'SPY АКТИВЕН';
+    status.classList.add('show');
+    setTimeout(() => status.classList.remove('show'), 1500);
+
+    function showMsg(msg, dur = 2000) {
+      status.textContent = msg;
+      status.classList.add('show');
+      clearTimeout(timer);
+      timer = setTimeout(() => status.classList.remove('show'), dur);
+    }
+
+    function render(el) {
+      if (!active) return;
+      
+      if (!el || !el.rect) {
+        hl.style.display = 'none';
+        tt.style.display = 'none';
+        return;
+      }
+
+      header.textContent = '<' + el.tag + '>';
+      elId.textContent = el.id || '-';
+      elText.textContent = el.text || '-';
+
+      const selectorVal = el.reliableSelector?.value || el.cssPath || el.xpath || '(no selector)';
+      sel.textContent = selectorVal;
+
+      hl.style.cssText = `display:block;left:${el.rect.x}px;top:${el.rect.y}px;width:${el.rect.width}px;height:${el.rect.height}px`;
+
+      const tx = Math.min(el.rect.x + el.rect.width + 20, window.innerWidth - 450);
+      const ty = Math.max(el.rect.y - 20, 10);
+      tt.style.cssText = `display:block;left:${tx}px;top:${ty}px`;
+    }
+
+    let lastX = -1, lastY = -1;
+    function poll() {
+      if (!active) return;
+      
+      if (!window.rpaforge) { 
+        setTimeout(poll, 100); 
+        return; 
+      }
+
+      window.rpaforge.spy.getMousePosition().then(pos => {
+        if (pos && (pos.x !== lastX || pos.y !== lastY)) {
+          lastX = pos.x;
+          lastY = pos.y;
+          window.rpaforge.spy.getElementAtPosition(pos.x, pos.y, 'desktop').then(render).catch(() => {});
+        }
+        if (active) setTimeout(poll, 80);
+      }).catch(() => {
+        if (active) setTimeout(poll, 80);
+      });
+    }
+    
+    poll();
+
+    if (window.rpaforge) {
+      window.rpaforge.bridge.onEvent(e => {
+        if (e.type === 'spy:elementCaptured') {
+          showMsg('ЗАХВАЧЕНО!', 2000);
+        }
+        if (e.type === 'spy:modeChanged') {
+          if (e.active === false) {
+            active = false;
+            hl.style.display = 'none';
+            tt.style.display = 'none';
+            status.textContent = 'SPY СТОП';
+            status.classList.add('show');
+            setTimeout(() => status.classList.remove('show'), 1500);
+          } else {
+            active = true;
+            lastX = -1;
+            lastY = -1;
+            poll();
+            status.textContent = 'SPY АКТИВЕН';
+            status.classList.add('show');
+            setTimeout(() => status.classList.remove('show'), 1500);
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>

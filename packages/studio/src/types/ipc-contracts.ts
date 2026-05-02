@@ -206,6 +206,7 @@ export interface StudioAPI {
   dialog: DialogAPI;
   fs: FileSystemAPI;
   log: LogAPI;
+  spy: SpyAPI;
 }
 
 // =============================================================================
@@ -272,6 +273,8 @@ export const IPC_CHANNELS = {
   LOG_GET: 'log:get',
   LOG_EXPORT: 'log:export',
   LOG_CLEAR: 'log:clear',
+  SPY_CAPTURE_WEB: 'spy:captureWeb',
+  SPY_CAPTURE_DESKTOP: 'spy:captureDesktop',
 } as const;
 
 // Type for IPC channel names
@@ -286,3 +289,82 @@ declare global {
     rpaforge?: StudioAPI;
   }
 }
+
+// =============================================================================
+// Inspector API
+// =============================================================================
+
+export interface PageElement {
+  tag: string;
+  id: string | null;
+  classes: string[];
+  text: string | null;
+  xpath: string;
+  cssPath: string;
+  reliableSelector: { type: string; value: string; reliability: number };
+  rect: { x: number; y: number; width: number; height: number };
+}
+
+export interface SelectorTestResult {
+  valid: boolean;
+  unique: boolean;
+  count: number;
+  visible?: boolean;
+  enabled?: boolean;
+  warning?: string;
+}
+
+export interface XPathResult {
+  xpath: string;
+  css: string;
+  tag: string;
+  text: string;
+}
+
+export interface InspectPageOptions {
+  includeFrames?: boolean;
+}
+
+export interface HighlightOptions {
+  color?: string;
+  duration?: number;
+}
+
+export interface ScreenshotOptions {
+  fullPage?: boolean;
+}
+
+export interface InspectorAPI {
+  /** Inspect the current page DOM and extract interactive elements */
+  inspectPage: (options?: InspectPageOptions) => Promise<PageElement[]>;
+  /** Visually highlight an element on the page */
+  highlightElement: (selector: string, options?: HighlightOptions) => Promise<void>;
+  /** Test if a selector matches elements on the page */
+  testSelector: (selector: string) => Promise<SelectorTestResult>;
+  /** Get XPath/CSS selector for element at given coordinates */
+  getXPathFromPoint: (x: number, y: number) => Promise<XPathResult>;
+  /** Capture a screenshot of the current page */
+  capturePageScreenshot: (options?: ScreenshotOptions) => Promise<string>;
+}
+
+export const INSPECTOR_CHANNELS = {
+  INSPECT: 'inspector:inspect',
+  HIGHLIGHT: 'inspector:highlight',
+  TEST: 'inspector:test',
+  POINT: 'inspector:point',
+  SCREENSHOT: 'inspector:screenshot',
+} as const;
+
+export interface SpyAPI {
+  startCapture: (mode: 'web' | 'desktop') => Promise<{ success: boolean }>;
+  stopCapture: () => Promise<{ success: boolean }>;
+  captureWebElement: (x: number, y: number) => Promise<PageElement>;
+  captureDesktopElement: (x: number, y: number) => Promise<PageElement>;
+  getMousePosition: () => Promise<{ x: number; y: number }>;
+  getElementAtPosition: (x: number, y: number, mode: 'web' | 'desktop') => Promise<PageElement | null>;
+}
+
+export const SPY_CHANNELS = {
+  CAPTURE_WEB: 'spy:captureWeb',
+  CAPTURE_DESKTOP: 'spy:captureDesktop',
+} as const;

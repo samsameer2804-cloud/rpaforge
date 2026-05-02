@@ -754,6 +754,111 @@ class DesktopUI:
                 }
         return properties
 
+    def inspect_window(self) -> dict[str, Any]:
+        """Get all interactive elements in the current window for selector building."""
+        if not self._current_window:
+            raise ValueError("No window selected. Use Wait For Window first.")
+
+        elements: list[dict[str, Any]] = []
+
+        def traverse(ctrl: Any, depth: int = 0) -> None:
+            if depth > 8:
+                return
+            try:
+                text = ""
+                class_name = ""
+                auto_id = ""
+                with contextlib.suppress(Exception):
+                    text = (ctrl.window_text() or "").strip()
+                with contextlib.suppress(Exception):
+                    class_name = ctrl.class_name() or ""
+                with contextlib.suppress(Exception):
+                    auto_id = ctrl.automation_id() or ""
+
+                if auto_id:
+                    sel_value = f"id:{auto_id}"
+                    reliability = 1.0
+                    sel_type = "id"
+                elif text and 0 < len(text) < 80:
+                    sel_value = f"name:{text}"
+                    reliability = 0.75
+                    sel_type = "name"
+                elif class_name:
+                    sel_value = f"class:{class_name}"
+                    reliability = 0.5
+                    sel_type = "class"
+                else:
+                    try:
+                        for child in ctrl.children():
+                            traverse(child, depth + 1)
+                    except Exception:
+                        pass
+                    return
+
+                ctrl_type = class_name
+                with contextlib.suppress(Exception):
+                    if hasattr(ctrl, "element_info") and ctrl.element_info.control_type:
+                        ctrl_type = str(ctrl.element_info.control_type)
+
+                rect_data: dict[str, Any] | None = None
+                with contextlib.suppress(Exception):
+                    r = ctrl.rectangle()
+                    if r and (r.right - r.left) > 0 and (r.bottom - r.top) > 0:
+                        rect_data = {
+                            "x": r.left,
+                            "y": r.top,
+                            "width": r.right - r.left,
+                            "height": r.bottom - r.top,
+                        }
+
+                elements.append(
+                    {
+                        "tag": ctrl_type or class_name or "control",
+                        "id": auto_id or None,
+                        "classes": [class_name] if class_name else [],
+                        "text": text[:100],
+                        "reliableSelector": {
+                            "type": sel_type,
+                            "value": sel_value,
+                            "reliability": reliability,
+                        },
+                        "rect": rect_data,
+                    }
+                )
+            except Exception:
+                pass
+
+            try:
+                for child in ctrl.children():
+                    traverse(child, depth + 1)
+            except Exception:
+                pass
+
+        traverse(self._current_window)
+        return {"elements": elements, "total": len(elements)}
+
+    def test_desktop_selector(
+        self, selector: str, timeout: str = "2s"
+    ) -> dict[str, Any]:
+        """Test a desktop selector; returns SelectorTestResult-compatible dict."""
+        result = self.validate_selector(selector, timeout)
+        found = result.get("found", False)
+        return {
+            "valid": result.get("valid", False),
+            "unique": found,
+            "count": 1 if found else 0,
+            "visible": result.get("visible", False),
+            "enabled": result.get("enabled", False),
+            "warning": None if found else "Element not found",
+        }
+
+    def highlight_desktop_element(self, selector: str, timeout: str = "2s") -> None:
+        """Draw a temporary red outline around the matched desktop element."""
+        element = self._find_element(selector, timeout, raise_error=False)
+        if element:
+            with contextlib.suppress(Exception):
+                element.draw_outline(colour="red", thickness=3)
+
     def _find_element(
         self,
         selector: str,

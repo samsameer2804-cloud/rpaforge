@@ -114,6 +114,17 @@ class BridgeHandlers:
             "formatCode": self._handle_format_code,
             "validateCode": self._handle_validate_code,
             "shutdown": self._handle_shutdown,
+            "inspectPage": self._handle_inspect_page,
+            "highlightElement": self._handle_highlight_element,
+            "testSelector": self._handle_test_selector,
+            "getXPathFromPoint": self._handle_get_xpath_from_point,
+            "capturePageScreenshot": self._handle_capture_screenshot,
+            "inspectDesktop": self._handle_inspect_desktop,
+            "testDesktopSelector": self._handle_test_desktop_selector,
+            "highlightDesktopElement": self._handle_highlight_desktop_element,
+            "captureWebElement": self._handle_capture_web_element,
+            "captureDesktopElement": self._handle_capture_desktop_element,
+            "getMousePosition": self._handle_get_mouse_position,
         }
 
     def _emit(self, event_dict: dict) -> None:
@@ -1155,3 +1166,111 @@ class BridgeHandlers:
         )
 
         return {"status": "shutting_down", "reason": reason}
+
+    def _get_webui_instance(self):
+        webui = self._engine.executor._libraries.get("WebUI")
+        if webui is None:
+            raise JSONRPCError(
+                code=-32001, message="WebUI not initialized. Open a browser first."
+            )
+        return webui
+
+    async def _handle_inspect_page(self, params: dict) -> dict:
+        webui = self._get_webui_instance()
+        include_frames = params.get("includeFrames", True)
+        return webui.inspect_page(include_frames=include_frames)
+
+    async def _handle_highlight_element(self, params: dict) -> dict:
+        webui = self._get_webui_instance()
+        webui.highlight_element(
+            selector=params["selector"],
+            color=params.get("color", "yellow"),
+            duration=params.get("duration", 3000),
+        )
+        return {"success": True}
+
+    async def _handle_test_selector(self, params: dict) -> dict:
+        webui = self._get_webui_instance()
+        return webui.test_selector(selector=params["selector"])
+
+    async def _handle_get_xpath_from_point(self, params: dict) -> dict:
+        webui = self._get_webui_instance()
+        return webui.get_xpath_from_point(x=params["x"], y=params["y"])
+
+    async def _handle_capture_screenshot(self, params: dict) -> dict:
+        import base64
+
+        webui = self._get_webui_instance()
+        screenshot_bytes = webui._page.screenshot(
+            full_page=params.get("fullPage", False)
+        )
+        return {"data": base64.b64encode(screenshot_bytes).decode(), "format": "png"}
+
+    def _get_desktopui_instance(self):
+        desktopui = self._engine.executor._libraries.get("DesktopUI")
+        if desktopui is None:
+            raise JSONRPCError(
+                code=-32001,
+                message="DesktopUI not initialized. Open an application first.",
+            )
+        return desktopui
+
+    async def _handle_inspect_desktop(self, _params: dict) -> dict:
+        desktopui = self._get_desktopui_instance()
+        return desktopui.inspect_window()
+
+    async def _handle_test_desktop_selector(self, params: dict) -> dict:
+        desktopui = self._get_desktopui_instance()
+        return desktopui.test_desktop_selector(selector=params.get("selector", ""))
+
+    async def _handle_highlight_desktop_element(self, params: dict) -> dict:
+        desktopui = self._get_desktopui_instance()
+        desktopui.highlight_desktop_element(selector=params.get("selector", ""))
+        return {"success": True}
+
+    def _run_in_executor(self, func, *args):
+        """Run a blocking function in a thread pool to avoid greenlet conflicts."""
+        import concurrent.futures
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(func, *args)
+            return future.result()
+
+    async def _handle_capture_web_element(self, params: dict) -> dict:
+        import logging
+        logger = logging.getLogger("rpaforge.bridge")
+        logger.debug("Capturing web element...")
+        from rpaforge_libraries.Spy import get_element_at_point_web
+
+        x = params.get("x", 0)
+        y = params.get("y", 0)
+        result = self._run_in_executor(get_element_at_point_web, x, y)
+        logger.debug(f"Web element capture result: {result}")
+        if result is None:
+            raise JSONRPCError(
+                code=-32002,
+                message="No web element found at position. Make sure Chrome has remote debugging enabled (--remote-debugging-port=9222)",
+            )
+        return result
+
+    async def _handle_capture_desktop_element(self, params: dict) -> dict:
+        import logging
+        logger = logging.getLogger("rpaforge.bridge")
+        logger.debug("Capturing desktop element...")
+        from rpaforge_libraries.Spy import get_element_at_point_desktop
+
+        x = params.get("x", 0)
+        y = params.get("y", 0)
+        result = self._run_in_executor(get_element_at_point_desktop, x, y)
+        logger.debug(f"Desktop element capture result: {result}")
+        if result is None:
+            raise JSONRPCError(
+                code=-32003, message="No desktop element found at position"
+            )
+        return result
+
+    async def _handle_get_mouse_position(self, _params: dict) -> dict:
+        from rpaforge_libraries.Spy import get_mouse_position
+
+        x, y = get_mouse_position()
+        return {"x": x, "y": y}

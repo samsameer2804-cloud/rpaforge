@@ -1,10 +1,11 @@
-import React from 'react';
-import { FiCode, FiMoreHorizontal } from 'react-icons/fi';
+import React, { useState } from 'react';
+import { FiCode, FiMoreHorizontal, FiCrosshair } from 'react-icons/fi';
 
 import VariablePicker from '../../VariablePicker';
 import ExpressionEditor from '../../ExpressionEditor';
 import FilePicker from '../../FilePicker';
 import { FieldHelp } from './FieldHelp';
+import SelectorPickerDialog from '../../../SelectorBuilder/SelectorPickerDialog';
 import type { ActivityParam } from '../../../../types/engine';
 import { stringifyValue, isPathParam, getFileFilters, multilineParamTypes } from '../utils/paramUtils';
 
@@ -40,6 +41,10 @@ const ActivityParamEditor: React.FC<ActivityParamEditorProps> = ({
   onOpenCodeEditor,
   activityLibrary,
 }) => {
+  const [selectorDialogOpen, setSelectorDialogOpen] = useState(false);
+
+  const selectorMode: 'web' | 'desktop' = activityLibrary === 'DesktopUI' ? 'desktop' : 'web';
+
   const isSelectorParam =
     param.name.toLowerCase().includes('selector') ||
     param.name.toLowerCase().includes('locator');
@@ -248,6 +253,16 @@ const ActivityParamEditor: React.FC<ActivityParamEditorProps> = ({
           onChange={(event) => onChange(param.name, event.target.value)}
           title='Use ${varName} syntax. Example: ${myVariable}'
         />
+        {isSelectorParam && (
+          <button
+            type="button"
+            className="px-2 py-1.5 border border-indigo-300 dark:border-indigo-600 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 transition-colors"
+            onClick={() => setSelectorDialogOpen(true)}
+            title="Выбрать селектор визуально"
+          >
+            <FiCrosshair className="w-4 h-4" />
+          </button>
+        )}
         <button
           type="button"
           className="px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400"
@@ -259,6 +274,13 @@ const ActivityParamEditor: React.FC<ActivityParamEditorProps> = ({
       </div>
       {param.description && (
         <div className="mt-1 text-xs text-slate-500">{param.description}</div>
+      )}
+      {selectorDialogOpen && (
+        <SelectorPickerDialog
+          onSelect={(sel: string) => onChange(param.name, sel)}
+          onClose={() => setSelectorDialogOpen(false)}
+          mode={selectorMode}
+        />
       )}
     </div>
   );

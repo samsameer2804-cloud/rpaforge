@@ -579,6 +579,192 @@ class WebUI:
             ),
         }
 
+    @activity(name="Inspect Page", category="Web")
+    def inspect_page(self, include_frames: bool = True) -> dict[str, Any]:
+        self._ensure_page()
+        elements = self._page.evaluate("""() => {
+            function getXPath(el) {
+                if (el.id) return '//' + el.tagName.toLowerCase() + '[@id=\'' + el.id + '\']';
+                const parts = [];
+                let current = el;
+                while (current && current.nodeType === 1) {
+                    let idx = 1;
+                    let sibling = current.previousSibling;
+                    while (sibling) {
+                        if (sibling.nodeType === 1 && sibling.tagName === current.tagName) idx++;
+                        sibling = sibling.previousSibling;
+                    }
+                    const tag = current.tagName.toLowerCase();
+                    parts.unshift(idx > 1 ? tag + '[' + idx + ']' : tag);
+                    current = current.parentElement;
+                }
+                return '/' + parts.join('/');
+            }
+
+            function getCSSPath(el) {
+                if (el.id) return el.tagName.toLowerCase() + '#' + CSS.escape(el.id);
+                const classes = Array.from(el.classList).slice(0, 3);
+                if (classes.length > 0) return el.tagName.toLowerCase() + '.' + classes.map(c => CSS.escape(c)).join('.');
+                return el.tagName.toLowerCase();
+            }
+
+            function getReliableSelector(el, xpath, cssPath) {
+                if (el.id) return {type: 'id', value: '#' + CSS.escape(el.id), reliability: 1.0};
+                const role = el.getAttribute('role');
+                const text = (el.textContent || '').trim().slice(0, 50);
+                if (role && text) return {type: 'role+text', value: '[role="' + role + '"]', reliability: 0.85};
+                if (el.classList.length > 0) return {type: 'css', value: cssPath, reliability: 0.6};
+                return {type: 'xpath', value: xpath, reliability: 0.4};
+            }
+
+            const selectors = 'input, button, a, select, textarea, [role]';
+            const nodes = Array.from(document.querySelectorAll(selectors));
+            return nodes.map(el => {
+                const rect = el.getBoundingClientRect();
+                const xpath = getXPath(el);
+                const cssPath = getCSSPath(el);
+                return {
+                    tag: el.tagName.toLowerCase(),
+                    id: el.id || null,
+                    classes: Array.from(el.classList),
+                    text: (el.textContent || '').trim().slice(0, 100),
+                    xpath: xpath,
+                    cssPath: cssPath,
+                    reliableSelector: getReliableSelector(el, xpath, cssPath),
+                    rect: {x: rect.x, y: rect.y, width: rect.width, height: rect.height}
+                };
+            });
+        }""")
+        return {"elements": elements, "total": len(elements), "url": self._page.url}
+
+    @activity(name="Highlight Element", category="Web")
+    def highlight_element(
+        self, selector: str, color: str = "yellow", duration: int = 3000
+    ) -> None:
+        self._ensure_page()
+        self._page.evaluate(
+            """([selector, color, duration]) => {
+            const el = document.querySelector(selector) ||
+                (selector.startsWith('/') || selector.startsWith('(')
+                    ? document.evaluate(selector, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue
+                    : null);
+            if (!el) return;
+            const rect = el.getBoundingClientRect();
+            const overlay = document.createElement('div');
+            overlay.style.cssText = [
+                'position:fixed',
+                'pointer-events:none',
+                'z-index:2147483647',
+                'left:' + (rect.left + window.scrollX) + 'px',
+                'top:' + (rect.top + window.scrollY) + 'px',
+                'width:' + rect.width + 'px',
+                'height:' + rect.height + 'px',
+                'background:' + color,
+                'opacity:0.5',
+                'border:2px solid darkorange',
+                'box-sizing:border-box'
+            ].join(';');
+            const badge = document.createElement('span');
+            badge.textContent = el.tagName.toLowerCase();
+            badge.style.cssText = 'position:absolute;top:0;left:0;background:darkorange;color:#fff;font-size:10px;padding:1px 3px;font-family:monospace';
+            overlay.appendChild(badge);
+            document.body.appendChild(overlay);
+            setTimeout(() => overlay.remove(), duration);
+        }""",
+            [selector, color, duration],
+        )
+
+    @activity(name="Test Selector", category="Web")
+    def test_selector(self, selector: str) -> dict[str, Any]:
+        self._ensure_page()
+        result = self._page.evaluate(
+            """(selector) => {
+            let count = 0;
+            let visible = null;
+            let enabled = null;
+            let warning = null;
+
+            const isXPath = selector.startsWith('/') || selector.startsWith('(') || selector.startsWith('.');
+            if (isXPath && (selector.startsWith('/') || selector.startsWith('('))) {
+                try {
+                    const xr = document.evaluate(selector, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+                    count = xr.snapshotLength;
+                } catch(e) {
+                    return {valid: false, unique: false, count: 0, visible: null, enabled: null, warning: 'XPath error: ' + e.message};
+                }
+            } else {
+                try {
+                    const nodes = document.querySelectorAll(selector);
+                    count = nodes.length;
+                } catch(e) {
+                    return {valid: false, unique: false, count: 0, visible: null, enabled: null, warning: 'CSS selector error: ' + e.message};
+                }
+            }
+
+            if (count === 0) return {valid: false, unique: false, count: 0, visible: null, enabled: null, warning: 'No elements found'};
+
+            const first = selector.startsWith('/') || selector.startsWith('(')
+                ? document.evaluate(selector, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue
+                : document.querySelector(selector);
+
+            if (first) {
+                const r = first.getBoundingClientRect();
+                visible = r.width > 0 && r.height > 0 && window.getComputedStyle(first).display !== 'none';
+                enabled = !first.disabled;
+            }
+
+            if (count > 1) warning = count + ' elements matched — selector is not unique';
+
+            return {valid: true, unique: count === 1, count: count, visible: visible, enabled: enabled, warning: warning};
+        }""",
+            selector,
+        )
+        return result
+
+    @activity(name="Get XPath From Point", category="Web")
+    def get_xpath_from_point(self, x: int, y: int) -> dict[str, str]:
+        self._ensure_page()
+        result = self._page.evaluate(
+            """([x, y]) => {
+            const el = document.elementFromPoint(x, y);
+            if (!el) return {xpath: '', css: '', tag: '', text: ''};
+
+            function getXPath(node) {
+                if (node.id) return '//' + node.tagName.toLowerCase() + '[@id=\'' + node.id + '\']';
+                const parts = [];
+                let cur = node;
+                while (cur && cur.nodeType === 1) {
+                    let idx = 1;
+                    let sib = cur.previousSibling;
+                    while (sib) {
+                        if (sib.nodeType === 1 && sib.tagName === cur.tagName) idx++;
+                        sib = sib.previousSibling;
+                    }
+                    const tag = cur.tagName.toLowerCase();
+                    parts.unshift(idx > 1 ? tag + '[' + idx + ']' : tag);
+                    cur = cur.parentElement;
+                }
+                return '/' + parts.join('/');
+            }
+
+            function getCSSPath(node) {
+                if (node.id) return node.tagName.toLowerCase() + '#' + CSS.escape(node.id);
+                const classes = Array.from(node.classList).slice(0, 3);
+                if (classes.length > 0) return node.tagName.toLowerCase() + '.' + classes.map(c => CSS.escape(c)).join('.');
+                return node.tagName.toLowerCase();
+            }
+
+            return {
+                xpath: getXPath(el),
+                css: getCSSPath(el),
+                tag: el.tagName.toLowerCase(),
+                text: (el.textContent || '').trim().slice(0, 100)
+            };
+        }""",
+            [x, y],
+        )
+        return result
+
     def _take_failure_screenshot(self, context: str = "") -> str | None:
         if not self._screenshot_on_failure or not self._page:
             return None
