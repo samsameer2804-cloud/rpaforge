@@ -121,7 +121,12 @@ select = [
 ignore = [
     "E501",   # line too long (handled by black)
     "B008",   # do not perform function calls in argument defaults
+    "SIM117", # nested with statements (allowed in tests)
+    "ARG001", # unused function arguments (allowed in tests)
 ]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["ARG001", "SIM117", "F841"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["rpaforge", "rpaforge_libraries"]
@@ -148,7 +153,7 @@ module = ["robot.*", "pywinauto.*", "playwright.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
-testpaths = ["packages"]
+testpaths = ["packages/core/tests", "packages/libraries/tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
 addopts = "-v --tb=short"

@@ -90,6 +90,12 @@ class SafeEvaluator(ast.NodeVisitor):
     def visit_Constant(self, node: ast.Constant) -> Any:
         return node.value
 
+    def visit_List(self, node: ast.List) -> Any:
+        return [self.visit(e) for e in node.elts]
+
+    def visit_Tuple(self, node: ast.Tuple) -> tuple[Any, ...]:
+        return tuple(self.visit(e) for e in node.elts)
+
     def visit_Num(self, node: ast.Num) -> Any:
         return node.n
 
