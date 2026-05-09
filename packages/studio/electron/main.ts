@@ -213,6 +213,10 @@ function createSpyOverlay(): BrowserWindow {
   const { width, height } = display.workAreaSize;
   logger.info(`Creating spy overlay: ${width}x${height}`);
 
+  const preloadPath = isDev
+    ? path.join(process.cwd(), 'dist-electron', 'electron', 'preload.js')
+    : path.join(__dirname, 'preload.js');
+
   spyOverlayWindow = new BrowserWindow({
     width,
     height,
@@ -226,8 +230,10 @@ function createSpyOverlay(): BrowserWindow {
     focusable: false,
     hasShadow: false,
     webPreferences: {
+      preload: preloadPath,
       contextIsolation: true,
       nodeIntegration: false,
+      sandbox: false,
     },
   });
 
@@ -278,11 +284,24 @@ function setupSpyShortcuts() {
 
       if (element) {
         mainWindow.webContents.send('spy:elementCaptured', { element, mode: spyMode });
+        if (spyOverlayWindow && !spyOverlayWindow.isDestroyed()) {
+          spyOverlayWindow.webContents.send('spy:elementCaptured', { element, mode: spyMode });
+        }
       }
     } catch (err) {
       logger.error('Failed to capture element on shortcut', err);
     }
   });
+
+  const freezeRegistered = globalShortcut.register('Control+Alt+Space', () => {
+    if (!isSpyModeActive || !spyOverlayWindow || spyOverlayWindow.isDestroyed()) return;
+    spyOverlayWindow.webContents
+      .executeJavaScript('window.toggleFreeze && window.toggleFreeze()')
+      .catch(() => {});
+  });
+  if (!freezeRegistered) {
+    logger.error('Failed to register Control+Alt+Space — may conflict with system AltGr key');
+  }
 
   globalShortcut.register('Escape', () => {
     if (!isSpyModeActive) return;
@@ -429,6 +448,9 @@ function setupIPCHandlers() {
       if (element) {
         if (mainWindow && !mainWindow.isDestroyed()) {
           mainWindow.webContents.send('spy:elementCaptured', { element, mode: spyMode });
+        }
+        if (spyOverlayWindow && !spyOverlayWindow.isDestroyed()) {
+          spyOverlayWindow.webContents.send('spy:elementCaptured', { element, mode: spyMode });
         }
         return { success: true, element };
       }

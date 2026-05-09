@@ -99,6 +99,18 @@
       box-shadow: 0 0 30px rgba(255, 107, 0, 0.6);
     }
     #status.show { display: block; }
+    #highlight.frozen {
+      border-color: #0057FF;
+      background: rgba(0, 87, 255, 0.15);
+      box-shadow: 0 0 20px rgba(0, 87, 255, 0.6);
+    }
+    #tooltip.frozen {
+      border-color: #0057FF;
+    }
+    #tooltip.frozen .header {
+      color: #0057FF;
+      border-bottom-color: #0057FF;
+    }
   </style>
 </head>
 <body>
@@ -114,7 +126,7 @@
       <span class="info-value" id="elText">-</span>
     </div>
     <div class="selector-box" id="selector"></div>
-    <div class="hint">Ctrl+Shift+C = захватить | Esc = выход</div>
+    <div class="hint">Ctrl+Shift+C = захватить | Ctrl+Alt+Space = зафиксировать | Esc = выход</div>
   </div>
   <div id="status"></div>
   
@@ -128,6 +140,8 @@
     const status = document.getElementById('status');
     let timer = null;
     let active = true;
+    let frozenElement = null;
+    let currentElement = null;
 
     status.textContent = 'SPY АКТИВЕН';
     status.classList.add('show');
@@ -140,12 +154,14 @@
       timer = setTimeout(() => status.classList.remove('show'), dur);
     }
 
-    function render(el) {
+    function renderElement(el) {
       if (!active) return;
-      
+
       if (!el || !el.rect) {
-        hl.style.display = 'none';
-        tt.style.display = 'none';
+        if (!frozenElement) {
+          hl.style.display = 'none';
+          tt.style.display = 'none';
+        }
         return;
       }
 
@@ -163,27 +179,51 @@
       tt.style.cssText = `display:block;left:${tx}px;top:${ty}px`;
     }
 
+    window.toggleFreeze = function() {
+      if (frozenElement) {
+        frozenElement = null;
+        lastX = -1;
+        lastY = -1;
+        hl.classList.remove('frozen');
+        tt.classList.remove('frozen');
+        showMsg('ОСВОБОЖДЕНО', 1500);
+      } else if (currentElement) {
+        frozenElement = currentElement;
+        renderElement(frozenElement);
+        hl.classList.add('frozen');
+        tt.classList.add('frozen');
+        showMsg('ЗАФИКСИРОВАНО', 1500);
+      }
+    };
+
     let lastX = -1, lastY = -1;
     function poll() {
       if (!active) return;
-      
-      if (!window.rpaforge) { 
-        setTimeout(poll, 100); 
-        return; 
+
+      if (!window.rpaforge) {
+        setTimeout(poll, 100);
+        return;
+      }
+
+      if (frozenElement) {
+        setTimeout(poll, 200);
+        return;
       }
 
       window.rpaforge.spy.getMousePosition().then(pos => {
         if (pos && (pos.x !== lastX || pos.y !== lastY)) {
           lastX = pos.x;
           lastY = pos.y;
-          window.rpaforge.spy.getElementAtPosition(pos.x, pos.y, 'desktop').then(render).catch(() => {});
+          window.rpaforge.spy.getElementAtPosition(pos.x, pos.y, 'desktop')
+            .then(el => { currentElement = el; renderElement(el); })
+            .catch(() => {});
         }
         if (active) setTimeout(poll, 80);
       }).catch(() => {
         if (active) setTimeout(poll, 80);
       });
     }
-    
+
     poll();
 
     if (window.rpaforge) {
@@ -194,6 +234,10 @@
         if (e.type === 'spy:modeChanged') {
           if (e.active === false) {
             active = false;
+            frozenElement = null;
+            currentElement = null;
+            hl.classList.remove('frozen');
+            tt.classList.remove('frozen');
             hl.style.display = 'none';
             tt.style.display = 'none';
             status.textContent = 'SPY СТОП';
