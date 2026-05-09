@@ -104,6 +104,7 @@ export interface ActivityParam {
   required: boolean;
   default?: unknown;
   options: string[];
+  variadic?: boolean;
 }
 
 export interface ActivityBuiltinSettings {
@@ -235,6 +236,7 @@ function normalizeActivityParam(param: Partial<ActivityParam>): ActivityParam {
     required: param.required ?? true,
     default: param.default,
     options: param.options || [],
+    variadic: param.variadic ?? false,
   };
 }
 
@@ -343,6 +345,11 @@ export function createActivityParamValues(
   activity: Activity
 ): Record<string, unknown> {
   return activity.params.reduce<Record<string, unknown>>((acc, param) => {
+    if (param.variadic) {
+      acc[param.name] = [''];
+      return acc;
+    }
+
     if (param.default !== undefined && param.default !== null) {
       acc[param.name] = param.default;
       return acc;

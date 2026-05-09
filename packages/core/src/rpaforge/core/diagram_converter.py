@@ -228,17 +228,24 @@ class DiagramConverter:
         block_args = block_data.get("args", [])
         params = block_data.get("params", {})
 
-        args = (
-            block_args
-            if block_args
-            else (
-                list(activity_values.values())
-                if activity_values
-                else list(params.values())
-                if params
-                else []
-            )
-        )
+        if block_args:
+            args = block_args
+        elif activity_values:
+            activity_def = data.get("activity") or {}
+            if isinstance(activity_def, dict):
+                params_meta = {p["name"]: p for p in activity_def.get("params", [])}
+            else:
+                params_meta = {}
+            args = []
+            for param_name, value in activity_values.items():
+                if params_meta.get(param_name, {}).get("variadic") and isinstance(value, list):
+                    args.extend(value)
+                else:
+                    args.append(value)
+        elif params:
+            args = list(params.values())
+        else:
+            args = []
 
         self._node_line_counter += 1
 

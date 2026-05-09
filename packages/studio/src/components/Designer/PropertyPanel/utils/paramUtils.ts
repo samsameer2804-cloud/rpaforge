@@ -4,6 +4,7 @@ import type { FilePickerMode } from '../../FilePicker';
 export const multilineParamTypes: ActivityParamType[] = ['code', 'dict', 'expression', 'list'];
 
 export const PATH_PARAM_PATTERNS: Array<{ pattern: RegExp; mode: FilePickerMode }> = [
+  { pattern: /paths$/i, mode: 'file' },
   { pattern: /path$/i, mode: 'file' },
   { pattern: /file$/i, mode: 'file' },
   { pattern: /filepath$/i, mode: 'file' },

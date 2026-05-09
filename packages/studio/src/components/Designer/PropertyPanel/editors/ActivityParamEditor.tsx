@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FiCode, FiMoreHorizontal, FiCrosshair } from 'react-icons/fi';
+import { FiCode, FiMoreHorizontal, FiCrosshair, FiPlus, FiX } from 'react-icons/fi';
 
 import VariablePicker from '../../VariablePicker';
 import ExpressionEditor from '../../ExpressionEditor';
@@ -118,7 +118,7 @@ const ActivityParamEditor: React.FC<ActivityParamEditorProps> = ({
           variables={variables}
           onCreateNew={onCreateNew}
           placeholder={param.description || `Select ${param.label.toLowerCase()}...`}
-          title='Use ${varName} syntax. Example: ${myVariable}'
+          title='Enter a variable name. Example: my_variable'
         />
         {param.description && (
           <div className="mt-1 text-xs text-slate-500">{param.description}</div>
@@ -128,6 +128,62 @@ const ActivityParamEditor: React.FC<ActivityParamEditorProps> = ({
   }
 
   const pathMode = isPathParam(param);
+  if (pathMode && param.variadic) {
+    const paths: string[] = Array.isArray(value) ? (value as string[]) : value ? [stringifyValue(value)] : [''];
+    const updatePaths = (next: string[]) => onChange(param.name, next);
+    return (
+      <div>
+        <label className="mb-1 flex items-center text-sm font-medium text-slate-600 dark:text-slate-300">
+          {param.label}
+          <span className="ml-2 text-xs font-normal text-slate-400">({paths.length} segment{paths.length !== 1 ? 's' : ''})</span>
+        </label>
+        <div className="space-y-1.5">
+          {paths.map((p, i) => (
+            <div key={i} className="flex gap-1.5 items-center">
+              <div className="flex-1">
+                <FilePicker
+                  value={p}
+                  onChange={(val) => {
+                    const next = [...paths];
+                    next[i] = val;
+                    updatePaths(next);
+                  }}
+                  mode={pathMode}
+                  filters={getFileFilters(param, activityLibrary)}
+                  placeholder={i === 0 ? 'Base path (e.g. C:\\Users\\user)' : `Segment ${i + 1} (e.g. Documents)`}
+                />
+              </div>
+              {paths.length > 1 && (
+                <button
+                  type="button"
+                  className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                  onClick={() => updatePaths(paths.filter((_, idx) => idx !== i))}
+                  title="Remove path segment"
+                >
+                  <FiX className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          ))}
+          <button
+            type="button"
+            className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 transition-colors"
+            onClick={() => updatePaths([...paths, ''])}
+          >
+            <FiPlus className="w-3.5 h-3.5" />
+            Add path segment
+          </button>
+        </div>
+        {param.description && (
+          <div className="mt-1 text-xs text-slate-500">{param.description}</div>
+        )}
+        <div className="mt-1 text-xs text-slate-400">
+          Segments are joined with the OS path separator. Use variable names directly, e.g. base_path
+        </div>
+      </div>
+    );
+  }
+
   if (pathMode) {
     return (
       <div>
@@ -154,7 +210,7 @@ const ActivityParamEditor: React.FC<ActivityParamEditorProps> = ({
           onCreateNew={onCreateNew}
           placeholder={param.description || `Enter ${param.label.toLowerCase()}...`}
           rows={2}
-          title='Use ${varName} syntax. Example: ${myVariable}'
+          title='Enter a variable name. Example: my_variable'
         />
       </div>
     );
@@ -251,7 +307,7 @@ const ActivityParamEditor: React.FC<ActivityParamEditorProps> = ({
           className="flex-1 rounded border px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-700"
           value={stringifyValue(value)}
           onChange={(event) => onChange(param.name, event.target.value)}
-          title='Use ${varName} syntax. Example: ${myVariable}'
+          title='Enter a variable name. Example: my_variable'
         />
         {isSelectorParam && (
           <button

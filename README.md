@@ -50,7 +50,7 @@ print(f"Status: {result.status}")
 | **Integrated Debugger** | Breakpoints, step over/into/out, variable inspection, call stack, conditional stops |
 | **14 RPA Libraries** | 55+ ready-made activities covering Desktop, Web, Excel, Database, OCR, HTTP, Credentials and more |
 | **Python Bridge** | Asyncio JSON-RPC server — Electron talks to Python over IPC with full type safety |
-| **Code Generation** | Diagram → Robot Framework → Python, with topology validation before every run |
+| **Code Generation** | Diagram → Python, with topology validation before every run |
 | **Security First** | SQL injection, path traversal, unsafe `getattr`, and IPC payload validation built-in (v0.3.1) |
 | **Persistent Storage** | IndexedDB autosave for processes, variables, and execution history |
 | **Cross-Platform** | Windows, macOS, Linux — one codebase |
@@ -230,7 +230,6 @@ pnpm build        # Production build
 
 **Backend (Python)**
 - `asyncio` JSON-RPC bridge
-- `robotframework` ≥ 7.0 for syntax compatibility
 - `ruff` for linting and formatting
 - `pytest` + `pytest-asyncio` for testing
 - `mypy` for type checking

@@ -257,6 +257,8 @@ def library(
 
 def _extract_params(func: Callable) -> list[dict[str, Any]]:
     """Extract parameter info from function signature."""
+    from inspect import Parameter as InspectParameter
+
     params = []
     sig = signature(func)
     param_overrides = getattr(func, "_param_overrides", {})
@@ -265,8 +267,9 @@ def _extract_params(func: Callable) -> list[dict[str, Any]]:
         if param_name in ("self", "cls"):
             continue
 
-        required = param_info.default is param_info.empty
-        default = None if required else param_info.default
+        is_variadic = param_info.kind == InspectParameter.VAR_POSITIONAL
+        required = (param_info.default is param_info.empty) and not is_variadic
+        default = None if (required or is_variadic) else param_info.default
 
         override = param_overrides.get(param_name, {})
 
@@ -294,6 +297,7 @@ def _extract_params(func: Callable) -> list[dict[str, Any]]:
                 "required": required,
                 "default": default,
                 "options": override.get("options", []),
+                "variadic": is_variadic,
             }
         )
 
