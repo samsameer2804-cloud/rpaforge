@@ -1,5 +1,5 @@
 import { memo, type ReactNode } from 'react';
-import { Handle, Position } from '@reactflow/core';
+import { Handle, Position, useStore } from '@reactflow/core';
 
 import {
   BLOCK_ICONS,
@@ -25,10 +25,11 @@ interface BaseBlockProps {
   isExecuting?: boolean;
 }
 
-const HEADER_HEIGHT = 36;
-const PORT_HEIGHT = 22;
-const PADDING_TOP = 12;
-const PADDING_BOTTOM = 12;
+const HEADER_HEIGHT = 34;
+const PORT_LABELS_AREA = 20;
+const MIN_CONTENT_HEIGHT = 50;
+const BASE_MIN_WIDTH = 200;
+const MIN_PORT_SPACING = 40; // px between port centers at minimum
 
 function getHandleColor(port: Port): string {
   switch (port.type) {
@@ -47,6 +48,18 @@ function getHandleColor(port: Port): string {
   }
 }
 
+function getInputHandleLeft(index: number, total: number): string {
+  if (total === 1) return '50%';
+  const step = 100 / (total + 1);
+  return `${step * (index + 1)}%`;
+}
+
+function getOutputHandleLeft(index: number, total: number): string {
+  if (total === 1) return '50%';
+  const step = 100 / (total + 1);
+  return `${step * (index + 1)}%`;
+}
+
 function BaseBlockComponent({
   data,
   selected,
@@ -59,35 +72,33 @@ function BaseBlockComponent({
   hasBreakpoint,
   isExecuting,
 }: BaseBlockProps) {
+  const isConnecting = useStore(state => !!state.connectionNodeId);
+  const fromHandleType = useStore(state => state.connectionHandleType);
+
   const colors = overrideColor || getBlockColors(data.category, data.type);
   const resolvedPortConfig = portConfig || BLOCK_PORT_CONFIGS[data.type];
   const resolvedIcon = icon || (isActivityBlock(data) ? data.icon : undefined) || BLOCK_ICONS[data.type];
   const resolvedTitle = title || data.label;
 
-  const maxPorts = Math.max(
-    resolvedPortConfig.inputs.length,
-    resolvedPortConfig.outputs.length
-  );
-  
-  const portsHeight = maxPorts * PORT_HEIGHT;
-  const contentHeight = Math.max(50, portsHeight + PADDING_TOP + PADDING_BOTTOM);
-  const totalHeight = HEADER_HEIGHT + contentHeight;
+  const inputCount = resolvedPortConfig.inputs.length;
+  const outputCount = resolvedPortConfig.outputs.length;
+  const maxPortCount = Math.max(inputCount, outputCount);
+  const minWidth = Math.max(BASE_MIN_WIDTH, (maxPortCount + 1) * MIN_PORT_SPACING);
 
-  const getOutputHandleTop = (index: number): number => {
-    return HEADER_HEIGHT + PADDING_TOP + (index + 0.5) * PORT_HEIGHT;
-  };
+  const contentHeight = MIN_CONTENT_HEIGHT;
+  const totalHeight = HEADER_HEIGHT + contentHeight + PORT_LABELS_AREA;
 
-  const hasOutputLabels = resolvedPortConfig.outputs.some(p => p.label) && resolvedPortConfig.outputs.length > 1;
-  const hasInputLabels = resolvedPortConfig.inputs.some(p => p.label) && resolvedPortConfig.inputs.length > 1;
+  const hasOutputLabels = resolvedPortConfig.outputs.some(p => p.label) && outputCount > 1;
+  const hasInputLabels = resolvedPortConfig.inputs.some(p => p.label) && inputCount > 1;
 
   return (
     <div
       className={`
-        min-w-[180px] rounded-lg border-2 bg-white shadow-md transition-all relative
+        rounded-xl border-2 shadow-lg transition-all relative bg-white
         ${selected ? 'ring-2 ring-offset-2 ring-blue-500' : ''}
-        ${isExecuting ? 'ring-4 ring-offset-2 ring-indigo-500' : ''}
+        ${isExecuting ? 'animate-pulse' : ''}
       `}
-      style={{ borderColor: colors.border, height: totalHeight }}
+      style={{ borderColor: colors.border, height: totalHeight, minWidth }}
     >
       {hasBreakpoint && (
         <div
@@ -95,98 +106,124 @@ function BaseBlockComponent({
           title="Breakpoint"
         />
       )}
-      
+
       {isExecuting && (
-        <div className="absolute inset-0 rounded-lg pointer-events-none overflow-hidden">
-          <div className="absolute inset-0 bg-indigo-500/10 animate-pulse" />
+        <div className="absolute inset-0 rounded-xl pointer-events-none overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 animate-[shimmer_1.5s_ease-in-out_infinite]" />
         </div>
       )}
-      
+
+      {/* Header */}
       <div
-        className="flex items-center gap-2 rounded-t-lg px-3 py-2"
+        className="flex items-center gap-2 rounded-t-xl px-3"
         style={{ backgroundColor: colors.primary, height: HEADER_HEIGHT }}
       >
-        <span className="text-lg">{resolvedIcon}</span>
-        <span className="truncate text-sm font-medium" style={{ color: '#ffffff' }}>{resolvedTitle}</span>
+        <span className="text-base leading-none">{resolvedIcon}</span>
+        <span className="truncate text-sm font-semibold text-white">{resolvedTitle}</span>
       </div>
 
-      <div 
-        className="relative text-sm text-gray-600 flex"
-        style={{ height: contentHeight }}
-      >
-        <div className="flex-1 px-2 flex items-center justify-center overflow-hidden">
-          {children || <div className="italic text-gray-400 text-xs">Configure...</div>}
-        </div>
-
-        {showPorts && hasOutputLabels && (
-          <div 
-            className="flex flex-col pr-2"
-            style={{ paddingTop: PADDING_TOP }}
-          >
-            {resolvedPortConfig.outputs.map((port) => (
-              <div
-                key={`output-label-${port.id}`}
-                className="text-[9px] text-slate-500 whitespace-nowrap"
-                style={{ height: PORT_HEIGHT, lineHeight: `${PORT_HEIGHT}px` }}
-              >
-                {port.label}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {showPorts && (
-        <>
-          {resolvedPortConfig.inputs.map((port) => (
-            <Handle
-              key={port.id}
-              type="target"
-              position={Position.Left}
-              id={port.id}
-              title={port.label}
-              className="w-3 h-3 border-2 border-white"
-              style={{
-                top: `${HEADER_HEIGHT + contentHeight / 2}px`,
-                transform: 'translateY(-50%)',
-                backgroundColor: getHandleColor(port),
-              }}
-            />
-          ))}
-          {resolvedPortConfig.outputs.map((port, index) => (
-            <Handle
-              key={port.id}
-              type="source"
-              position={Position.Right}
-              id={port.id}
-              title={port.label}
-              className="w-3 h-3 border-2 border-white"
-              style={{
-                top: `${getOutputHandleTop(index)}px`,
-                transform: 'translateY(-50%)',
-                backgroundColor: getHandleColor(port),
-              }}
-            />
-          ))}
-        </>
-      )}
-
+      {/* Input labels row (only when multiple inputs) */}
       {showPorts && hasInputLabels && (
         <div
-          className="absolute left-2 flex flex-col"
-          style={{ top: HEADER_HEIGHT + PADDING_TOP }}
+          className="absolute top-0 left-0 right-0 flex"
+          style={{ height: HEADER_HEIGHT, paddingTop: 2 }}
         >
-          {resolvedPortConfig.inputs.map((port) => (
+          {resolvedPortConfig.inputs.map((port, index) => (
             <div
               key={`input-label-${port.id}`}
-              className="text-[10px] text-slate-500 whitespace-nowrap"
-              style={{ height: PORT_HEIGHT, lineHeight: `${PORT_HEIGHT}px` }}
+              className="absolute text-[9px] text-white/70 whitespace-nowrap"
+              style={{
+                left: getInputHandleLeft(index, inputCount),
+                transform: 'translateX(-50%)',
+                bottom: 2,
+              }}
             >
               {port.label}
             </div>
           ))}
         </div>
+      )}
+
+      {/* Content area */}
+      <div
+        className="relative px-3 py-2 text-sm text-gray-600 flex items-center justify-center overflow-hidden"
+        style={{ height: contentHeight }}
+      >
+        {children || <div className="italic text-gray-400 text-xs">Configure...</div>}
+      </div>
+
+      {/* Output labels row at bottom */}
+      {showPorts && hasOutputLabels && (
+        <div
+          className="absolute bottom-0 left-0 right-0 flex"
+          style={{ height: PORT_LABELS_AREA }}
+        >
+          {resolvedPortConfig.outputs.map((port, index) => (
+            <div
+              key={`output-label-${port.id}`}
+              className="absolute text-[9px] text-slate-500 whitespace-nowrap"
+              style={{
+                left: getOutputHandleLeft(index, outputCount),
+                transform: 'translateX(-50%)',
+                top: 3,
+              }}
+            >
+              {port.label}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Handles */}
+      {showPorts && (
+        <>
+          {resolvedPortConfig.inputs.map((port, index) => {
+            const highlighted = isConnecting && fromHandleType === 'source';
+            return (
+              <Handle
+                key={port.id}
+                type="target"
+                position={Position.Top}
+                id={port.id}
+                title={port.label}
+                className="w-3 h-3 border-2 border-white"
+                style={{
+                  left: getInputHandleLeft(index, inputCount),
+                  top: 0,
+                  transform: highlighted ? 'translate(-50%, -50%) scale(1.4)' : 'translate(-50%, -50%)',
+                  backgroundColor: getHandleColor(port),
+                  transition: 'transform 150ms ease, box-shadow 150ms ease',
+                  ...(highlighted && {
+                    boxShadow: '0 0 0 4px rgba(99,102,241,0.4), 0 0 12px rgba(99,102,241,0.3)',
+                  }),
+                }}
+              />
+            );
+          })}
+          {resolvedPortConfig.outputs.map((port, index) => {
+            const highlighted = isConnecting && fromHandleType === 'target';
+            return (
+              <Handle
+                key={port.id}
+                type="source"
+                position={Position.Bottom}
+                id={port.id}
+                title={port.label}
+                className="w-3 h-3 border-2 border-white"
+                style={{
+                  left: getOutputHandleLeft(index, outputCount),
+                  bottom: 0,
+                  transform: highlighted ? 'translate(-50%, 50%) scale(1.4)' : 'translate(-50%, 50%)',
+                  backgroundColor: getHandleColor(port),
+                  transition: 'transform 150ms ease, box-shadow 150ms ease',
+                  ...(highlighted && {
+                    boxShadow: '0 0 0 4px rgba(99,102,241,0.4), 0 0 12px rgba(99,102,241,0.3)',
+                  }),
+                }}
+              />
+            );
+          })}
+        </>
       )}
     </div>
   );

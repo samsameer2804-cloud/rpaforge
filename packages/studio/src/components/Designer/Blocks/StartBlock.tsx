@@ -1,20 +1,44 @@
 import { memo } from 'react';
-import { NodeProps } from '@reactflow/core';
-
-import { ProcessNodeData } from '../../../stores/processStore';
+import { Handle, Position } from '@reactflow/core';
+import type { NodeProps } from '@reactflow/core';
+import type { ProcessNodeData } from '../../../stores/processStore';
 import { isStartBlock } from '../../../types/blocks';
-import { BaseBlock } from './BaseBlock';
 
 function StartBlockComponent({ data, selected }: NodeProps<ProcessNodeData>) {
   const blockData = data.blockData;
   if (!blockData || !isStartBlock(blockData)) return null;
 
   return (
-    <BaseBlock data={blockData} selected={selected}>
-      <div className="text-[10px] text-gray-500 truncate w-full">
-        {blockData.processName || 'Main Process'}
-      </div>
-    </BaseBlock>
+    <div
+      className={`
+        relative flex items-center justify-center select-none transition-all
+        ${selected ? 'ring-2 ring-offset-2 ring-green-400' : ''}
+      `}
+      style={{
+        width: 160,
+        height: 48,
+        backgroundColor: '#22C55E',
+        border: '2.5px solid #16A34A',
+        borderRadius: 24,
+        boxShadow: '0 4px 10px rgba(34,197,94,0.35)',
+      }}
+    >
+      <span className="text-white font-bold text-sm tracking-widest uppercase select-none">
+        ▶ Start
+      </span>
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="output"
+        className="w-3 h-3 border-2 border-white"
+        style={{
+          backgroundColor: '#6B7280',
+          left: '50%',
+          bottom: 0,
+          transform: 'translate(-50%, 50%)',
+        }}
+      />
+    </div>
   );
 }
 

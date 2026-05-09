@@ -4,6 +4,8 @@ import { ProcessNodeData } from '../../../stores/processStore';
 import { BaseBlock } from './BaseBlock';
 import type { WhileBlockData } from '../../../types/blocks';
 
+const WHILE_COLOR = { primary: '#7C3AED', hover: '#6D28D9', border: '#5B21B6' };
+
 function WhileBlockComponent({ data, selected }: NodeProps<ProcessNodeData>) {
   const blockData = data.blockData as WhileBlockData | undefined;
   if (!blockData || blockData.type !== 'while') return null;
@@ -11,9 +13,15 @@ function WhileBlockComponent({ data, selected }: NodeProps<ProcessNodeData>) {
   const condition = blockData.condition || 'True';
 
   return (
-    <BaseBlock data={blockData} selected={selected}>
-      <div className="text-[10px] text-gray-500 truncate w-full">
-        {condition}
+    <BaseBlock data={blockData} selected={selected} overrideColor={WHILE_COLOR}>
+      <div className="flex flex-col items-start w-full gap-0.5">
+        <span
+          className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded"
+          style={{ backgroundColor: '#EDE9FE', color: '#7C3AED' }}
+        >
+          ↻ Loop
+        </span>
+        <span className="text-[10px] text-gray-500 truncate w-full">{condition}</span>
       </div>
     </BaseBlock>
   );

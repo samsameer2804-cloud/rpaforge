@@ -164,13 +164,14 @@ const BlockItem: React.FC<BlockItemProps> = ({ block, onDragStart }) => {
 
   return (
     <div
-      className="flex items-center gap-2 px-2 py-1.5 rounded cursor-grab hover:bg-slate-100 transition-colors group"
+      className="flex items-center gap-2 px-2 py-1.5 rounded cursor-grab hover:bg-white hover:shadow-sm transition-all group border-l-2"
+      style={{ borderLeftColor: colors.primary }}
       draggable
       onDragStart={(e) => onDragStart(e, block)}
       title={tooltip}
     >
       <span
-        className="w-6 h-6 flex items-center justify-center rounded text-white text-sm"
+        className="w-6 h-6 flex items-center justify-center rounded-full text-white text-sm flex-shrink-0"
         style={{ backgroundColor: colors.primary }}
       >
         {icon}
@@ -200,13 +201,14 @@ const ActivityItem: React.FC<ActivityItemProps> = ({ activity, onDragStart, libr
 
   return (
     <div
-      className="flex items-center gap-2 px-2 py-1.5 rounded cursor-grab hover:bg-slate-100 transition-colors"
+      className="flex items-center gap-2 px-2 py-1.5 rounded cursor-grab hover:bg-white hover:shadow-sm transition-all border-l-2"
+      style={{ borderLeftColor: style.color }}
       draggable
       onDragStart={(e) => onDragStart(e, activity)}
       title={tooltip}
     >
       <span
-        className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded text-base"
+        className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
         style={{ backgroundColor: style.bgColor, color: style.color }}
       >
         {activity.library.charAt(0)}
@@ -216,9 +218,6 @@ const ActivityItem: React.FC<ActivityItemProps> = ({ activity, onDragStart, libr
         {activity.description && (
           <div className="text-xs text-slate-500 truncate">{activity.description}</div>
         )}
-        <div className="text-[11px] font-medium text-slate-600 truncate mt-1">
-          <span className="opacity-70">in</span> {libraryName}
-        </div>
       </div>
     </div>
   );
@@ -256,22 +255,28 @@ const BlockCategorySection: React.FC<BlockCategorySectionProps> = ({
   return (
     <div className="category-section">
       <button
-        className="w-full flex items-center gap-2 px-2 py-1.5 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800 rounded"
-        style={{ color: colors.primary }}
+        className="w-full flex items-center gap-2 px-2 py-1.5 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 rounded border-l-4 transition-colors"
+        style={{ color: colors.primary, borderLeftColor: colors.primary }}
         onClick={() => setIsExpanded(!isExpanded)}
         aria-expanded={isExpanded}
         aria-label={`${category.name}, ${filteredBlocks.length} blocks`}
       >
         {isExpanded ? (
-          <FiChevronDown className="w-4 h-4" aria-hidden="true" />
+          <FiChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
         ) : (
-          <FiChevronRight className="w-4 h-4" aria-hidden="true" />
+          <FiChevronRight className="w-3.5 h-3.5" aria-hidden="true" />
         )}
         <span aria-hidden="true">{category.icon} {category.name}</span>
-        <span className="ml-auto text-xs text-slate-400" aria-hidden="true">{filteredBlocks.length}</span>
+        <span
+          className="ml-auto text-[10px] font-medium px-1.5 py-0.5 rounded-full"
+          style={{ backgroundColor: colors.primary + '20', color: colors.primary }}
+          aria-hidden="true"
+        >
+          {filteredBlocks.length}
+        </span>
       </button>
       {isExpanded && (
-        <div className="pl-2 pr-1">
+        <div className="pl-2 pr-1 mt-0.5">
           {filteredBlocks.map((block) => (
             <BlockItem
               key={block.type}
@@ -315,30 +320,36 @@ const ActivityCategorySection: React.FC<ActivityCategorySectionProps> = ({
   return (
     <div className="category-section">
       <button
-        className="w-full flex items-center gap-2 px-2 py-1.5 text-sm font-medium rounded transition-colors"
-        style={{ color: style.color }}
+        className="w-full flex items-center gap-2 px-2 py-1.5 text-sm font-semibold rounded transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 border-l-4"
+        style={{ color: style.color, borderLeftColor: style.color }}
         onClick={() => setIsExpanded(!isExpanded)}
         aria-expanded={isExpanded}
         aria-label={`${category.name}, ${filteredItems.length} activities`}
         title={style.description}
       >
         {isExpanded ? (
-          <FiChevronDown className="w-4 h-4" aria-hidden="true" />
+          <FiChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
         ) : (
-          <FiChevronRight className="w-4 h-4" aria-hidden="true" />
+          <FiChevronRight className="w-3.5 h-3.5" aria-hidden="true" />
         )}
         <span
-          className="p-1 rounded"
+          className="p-1 rounded-full"
           style={{ backgroundColor: style.bgColor }}
           aria-hidden="true"
         >
           {style.icon}
         </span>
         <span aria-hidden="true">{category.name}</span>
-        <span className="ml-auto text-xs opacity-60" aria-hidden="true">{filteredItems.length}</span>
+        <span
+          className="ml-auto text-[10px] font-medium px-1.5 py-0.5 rounded-full"
+          style={{ backgroundColor: style.color + '20', color: style.color }}
+          aria-hidden="true"
+        >
+          {filteredItems.length}
+        </span>
       </button>
       {isExpanded && (
-        <div className="pl-2 pr-1">
+        <div className="pl-2 pr-1 mt-0.5">
           {filteredItems.map((item) => (
             <ActivityItem
               key={item.id}
@@ -396,7 +407,7 @@ const ActivityPalette: React.FC = () => {
             type="text"
             placeholder="Search blocks and activities..."
             aria-label="Search blocks and activities"
-            className="w-full pl-8 pr-2 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100 dark:placeholder-slate-400"
+            className="w-full pl-8 pr-2 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all duration-150 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100 dark:placeholder-slate-400"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />

@@ -18,6 +18,7 @@ import { Controls } from '@reactflow/controls';
 import { MiniMap } from '@reactflow/minimap';
 import { createActivityBlockData, type BlockData } from '../../types/blocks';
 import { edgeTypes } from './Edges';
+import { ConnectionLine } from './Edges/ConnectionLine';
 import { blockNodeTypes } from './Blocks';
 import { generateNodeId } from '../../utils/guid';
 import { createLogger } from '../../utils/logger';
@@ -63,7 +64,7 @@ const ProcessCanvasInner: React.FC = () => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition } = useReactFlow();
   const [snapToGrid, setSnapToGrid] = useState(true);
-  const [edgeType, setEdgeType] = useState<EdgeTypeOption>('smoothstep');
+  const [edgeType, setEdgeType] = useState<EdgeTypeOption>('auto-route');
   const [isDragOver, setIsDragOver] = useState(false);
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
     isOpen: false,
@@ -562,6 +563,9 @@ const ProcessCanvasInner: React.FC = () => {
         onPaneContextMenu={onPaneContextMenu}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypesConfig}
+        connectionRadius={40}
+        connectionLineComponent={ConnectionLine}
+        connectionLineStyle={{ stroke: '#6366F1', strokeWidth: 2.5, strokeDasharray: '6,3' }}
         deleteKeyCode={['Backspace', 'Delete']}
         selectionOnDrag
         panOnDrag={[1, 2]}
@@ -678,6 +682,11 @@ const ProcessCanvasInner: React.FC = () => {
         @keyframes dash {
           to {
             stroke-dashoffset: -10;
+          }
+        }
+        @keyframes dashdraw {
+          to {
+            stroke-dashoffset: -9;
           }
         }
         @keyframes shimmer {

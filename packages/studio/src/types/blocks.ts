@@ -65,70 +65,70 @@ export interface BlockColor {
 export const BLOCK_PORT_CONFIGS: Record<BlockType, BlockPortConfig> = {
   start: {
     inputs: [],
-    outputs: [{ id: 'output', type: 'output', position: 'right' }],
+    outputs: [{ id: 'output', type: 'output', position: 'bottom' }],
   },
   end: {
-    inputs: [{ id: 'input', type: 'input', position: 'left' }],
+    inputs: [{ id: 'input', type: 'input', position: 'top' }],
     outputs: [],
   },
   if: {
-    inputs: [{ id: 'input', type: 'input', position: 'left' }],
+    inputs: [{ id: 'input', type: 'input', position: 'top' }],
     outputs: [
-      { id: 'true', type: 'true', label: 'True', position: 'right' },
-      { id: 'false', type: 'false', label: 'False', position: 'right' },
+      { id: 'true', type: 'true', label: 'True', position: 'bottom' },
+      { id: 'false', type: 'false', label: 'False', position: 'bottom' },
     ],
   },
   switch: {
-    inputs: [{ id: 'input', type: 'input', position: 'left' }],
-    outputs: [{ id: 'default', type: 'output', label: 'Default', position: 'right' }],
+    inputs: [{ id: 'input', type: 'input', position: 'top' }],
+    outputs: [{ id: 'default', type: 'output', label: 'Default', position: 'bottom' }],
   },
   while: {
-    inputs: [{ id: 'input', type: 'input', position: 'left' }],
+    inputs: [{ id: 'input', type: 'input', position: 'top' }],
     outputs: [
-      { id: 'body', type: 'output', label: 'Body', position: 'right' },
-      { id: 'next', type: 'output', label: 'Next', position: 'right' },
+      { id: 'body', type: 'output', label: 'Body', position: 'bottom' },
+      { id: 'next', type: 'output', label: 'Next', position: 'bottom' },
     ],
   },
   'for-each': {
-    inputs: [{ id: 'input', type: 'input', position: 'left' }],
+    inputs: [{ id: 'input', type: 'input', position: 'top' }],
     outputs: [
-      { id: 'body', type: 'output', label: 'Body', position: 'right' },
-      { id: 'next', type: 'output', label: 'Next', position: 'right' },
+      { id: 'body', type: 'output', label: 'Body', position: 'bottom' },
+      { id: 'next', type: 'output', label: 'Next', position: 'bottom' },
     ],
   },
   parallel: {
-    inputs: [{ id: 'input', type: 'input', position: 'left' }],
+    inputs: [{ id: 'input', type: 'input', position: 'top' }],
     outputs: [
-      { id: 'branch-1', type: 'branch', label: 'Branch 1', position: 'right' },
-      { id: 'branch-2', type: 'branch', label: 'Branch 2', position: 'right' },
+      { id: 'branch-1', type: 'branch', label: 'Branch 1', position: 'bottom' },
+      { id: 'branch-2', type: 'branch', label: 'Branch 2', position: 'bottom' },
     ],
   },
   'retry-scope': {
-    inputs: [{ id: 'input', type: 'input', position: 'left' }],
-    outputs: [{ id: 'output', type: 'output', position: 'right' }],
+    inputs: [{ id: 'input', type: 'input', position: 'top' }],
+    outputs: [{ id: 'output', type: 'output', position: 'bottom' }],
   },
   'try-catch': {
-    inputs: [{ id: 'input', type: 'input', position: 'left' }],
+    inputs: [{ id: 'input', type: 'input', position: 'top' }],
     outputs: [
-      { id: 'output', type: 'output', label: 'Success', position: 'right' },
-      { id: 'error', type: 'error', label: 'Error', position: 'right' },
+      { id: 'output', type: 'output', label: 'Success', position: 'bottom' },
+      { id: 'error', type: 'error', label: 'Error', position: 'bottom' },
     ],
   },
   throw: {
-    inputs: [{ id: 'input', type: 'input', position: 'left' }],
+    inputs: [{ id: 'input', type: 'input', position: 'top' }],
     outputs: [],
   },
   assign: {
-    inputs: [{ id: 'input', type: 'input', position: 'left' }],
-    outputs: [{ id: 'output', type: 'output', position: 'right' }],
+    inputs: [{ id: 'input', type: 'input', position: 'top' }],
+    outputs: [{ id: 'output', type: 'output', position: 'bottom' }],
   },
   activity: {
-    inputs: [{ id: 'input', type: 'input', position: 'left' }],
-    outputs: [{ id: 'output', type: 'output', position: 'right' }],
+    inputs: [{ id: 'input', type: 'input', position: 'top' }],
+    outputs: [{ id: 'output', type: 'output', position: 'bottom' }],
   },
   'sub-diagram-call': {
-    inputs: [{ id: 'input', type: 'input', position: 'left' }],
-    outputs: [{ id: 'output', type: 'output', position: 'right' }],
+    inputs: [{ id: 'input', type: 'input', position: 'top' }],
+    outputs: [{ id: 'output', type: 'output', position: 'bottom' }],
   },
 };
 
@@ -422,7 +422,7 @@ export function getSwitchPortConfig(blockData: SwitchBlockData): BlockPortConfig
     id: switchCase.id || `case-${switchCase.value || switchCase.label || 'default'}`,
     type: 'output' as const,
     label: switchCase.label || switchCase.value || 'Case',
-    position: 'right' as const,
+    position: 'bottom' as const,
   }));
 
   return {
@@ -435,7 +435,7 @@ export function getSwitchPortConfig(blockData: SwitchBlockData): BlockPortConfig
               id: 'default',
               type: 'output',
               label: 'Default',
-              position: 'right',
+              position: 'bottom',
             },
           ]
         : BLOCK_PORT_CONFIGS.switch.outputs,
@@ -456,7 +456,7 @@ export function getParallelPortConfig(blockData: ParallelBlockData): BlockPortCo
       id: branch.id || `branch-${index + 1}`,
       type: 'branch' as const,
       label: branch.name || `Branch ${index + 1}`,
-      position: 'right' as const,
+      position: 'bottom' as const,
     })),
   };
 }
@@ -467,7 +467,7 @@ export function getTryCatchPortConfig(blockData: TryCatchBlockData): BlockPortCo
       id: 'output',
       type: 'output',
       label: 'Success',
-      position: 'right',
+      position: 'bottom',
     },
   ];
 
@@ -477,7 +477,7 @@ export function getTryCatchPortConfig(blockData: TryCatchBlockData): BlockPortCo
         id: exceptBlock.id,
         type: 'error',
         label: exceptBlock.exceptionType || 'Exception',
-        position: 'right',
+        position: 'bottom',
       });
     });
   } else {
@@ -485,7 +485,7 @@ export function getTryCatchPortConfig(blockData: TryCatchBlockData): BlockPortCo
       id: 'error',
       type: 'error',
       label: 'Except',
-      position: 'right',
+      position: 'bottom',
     });
   }
 
@@ -494,7 +494,7 @@ export function getTryCatchPortConfig(blockData: TryCatchBlockData): BlockPortCo
       id: 'finally',
       type: 'output',
       label: 'Finally',
-      position: 'right',
+      position: 'bottom',
     });
   }
 

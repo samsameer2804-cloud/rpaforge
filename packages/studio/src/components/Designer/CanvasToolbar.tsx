@@ -15,7 +15,7 @@ import { FaMinus, FaLongArrowAltRight } from 'react-icons/fa';
 import { useReactFlow } from '@reactflow/core';
 import { useProcessStore } from '../../stores/processStore';
 
-export type EdgeTypeOption = 'smoothstep' | 'step' | 'default' | 'bendable' | 'straight';
+export type EdgeTypeOption = 'smoothstep' | 'step' | 'default' | 'bendable' | 'straight' | 'auto-route';
 export type AlignmentType = 'left' | 'center-h' | 'right' | 'top' | 'center-v' | 'bottom';
 export type DistributionType = 'horizontal' | 'vertical';
 
@@ -31,6 +31,7 @@ interface CanvasToolbarProps {
 }
 
 const EDGE_TYPE_OPTIONS: { type: EdgeTypeOption; label: string; description: string }[] = [
+  { type: 'auto-route', label: 'Auto', description: 'Smart orthogonal routing' },
   { type: 'smoothstep', label: 'Rounded', description: 'Lines with rounded corners' },
   { type: 'step', label: 'Sharp', description: 'Lines with right-angle corners' },
 ];
