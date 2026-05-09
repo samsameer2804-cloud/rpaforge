@@ -305,7 +305,9 @@ class PythonCodeGenerator:
                     params_meta = {}
                 args = []
                 for param_name, value in activity_values.items():
-                    if params_meta.get(param_name, {}).get("variadic") and isinstance(value, list):
+                    if params_meta.get(param_name, {}).get("variadic") and isinstance(
+                        value, list
+                    ):
                         args.extend(value)
                     else:
                         args.append(value)
