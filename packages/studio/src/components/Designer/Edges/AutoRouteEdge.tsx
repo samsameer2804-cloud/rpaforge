@@ -6,7 +6,7 @@ import {
   getSmoothStepPath,
 } from '@reactflow/core';
 import type { ConnectionData } from '../../../types/connections';
-import { CONNECTION_STYLES, getConnectionType } from '../../../types/connections';
+import { CONNECTION_STYLES } from '../../../types/connections';
 
 interface AutoRouteEdgeProps extends EdgeProps<ConnectionData> {
   isExecuting?: boolean;
@@ -23,8 +23,6 @@ function AutoRouteEdgeComponent({
   data,
   style,
   selected,
-  sourceHandle,
-  targetHandle,
   isExecuting,
 }: AutoRouteEdgeProps) {
   const [edgePath, labelX, labelY] = getSmoothStepPath({
@@ -38,7 +36,7 @@ function AutoRouteEdgeComponent({
     offset: 40,
   });
 
-  const connectionType = data?.type || getConnectionType(sourceHandle ?? null, targetHandle ?? null);
+  const connectionType = data?.type || 'normal';
   const connectionStyle = CONNECTION_STYLES[connectionType];
 
   const isExecutingActual = isExecuting ?? data?.animated ?? false;
