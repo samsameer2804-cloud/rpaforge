@@ -12,6 +12,7 @@ from rpaforge.codegen.python_generator import (
     _validate_variable_name,
 )
 
+
 class TestSanitizeString:
     """Tests for _sanitize_string function."""
 
