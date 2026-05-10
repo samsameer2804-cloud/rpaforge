@@ -12,9 +12,7 @@ import contextlib
 import multiprocessing
 import sys
 import threading
-import weakref
 from typing import Any
-
 
 DEFAULT_POOL_KEEPALIVE_SECONDS = 60
 
