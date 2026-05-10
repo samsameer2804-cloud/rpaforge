@@ -13,7 +13,6 @@ import keyword
 import re
 from typing import Any
 
-# Pre-compiled regex for surrogate character removal
 _SURROGATE_PATTERN = re.compile(r"[\ud800-\udfff]")
 
 MAX_STRING_LENGTH = 10240

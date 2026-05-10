@@ -24,10 +24,6 @@ import type {
   ToggleBreakpointResult,
 } from './engine';
 
-// =============================================================================
-// Bridge API (low-level JSON-RPC)
-// =============================================================================
-
 export interface BridgeAPI {
   /** Check if Python bridge process is ready to accept requests */
   isReady: () => Promise<boolean>;
@@ -40,10 +36,6 @@ export interface BridgeAPI {
   /** Subscribe to events from Python bridge */
   onEvent: (listener: EventListener) => () => void;
 }
-
-// =============================================================================
-// Engine API (high-level process execution)
-// =============================================================================
 
 export interface EngineAPI {
   /** Ping the engine to check connectivity */
@@ -63,10 +55,6 @@ export interface EngineAPI {
   /** Get available activities/keywords from all loaded libraries */
   getActivities: () => Promise<GetActivitiesResult>;
 }
-
-// =============================================================================
-// Debugger API (breakpoints and stepping)
-// =============================================================================
 
 export interface DebuggerAPI {
   /** Set a breakpoint at file:line with optional condition */
@@ -95,10 +83,6 @@ export interface DebuggerAPI {
   getCallStack: () => Promise<GetCallStackResult>;
 }
 
-// =============================================================================
-// Editor API (code editor utilities)
-// =============================================================================
-
 export interface EditorAPI {
   /** Format Python code using ruff */
   formatCode: (code: string) => Promise<{ formatted_code: string; changed: boolean }>;
@@ -115,10 +99,6 @@ export interface ValidationError {
   code: string;
   severity: 'error' | 'warning';
 }
-
-// =============================================================================
-// Dialog API (file/folder pickers)
-// =============================================================================
 
 export interface FileFilter {
   name: string;
@@ -144,10 +124,6 @@ export interface DialogAPI {
   /** Show save file dialog */
   showSaveDialog: (options: SaveDialogOptions) => Promise<{ canceled: boolean; filePath?: string }>;
 }
-
-// =============================================================================
-// FileSystem API (file operations)
-// =============================================================================
 
 export interface FileInfo {
   name: string;
@@ -179,10 +155,6 @@ export interface FileSystemAPI {
   onFsEvent: (listener: (event: FsEvent) => void) => () => void;
 }
 
-// =============================================================================
-// Combined Studio API (exposed via contextBridge)
-// =============================================================================
-
 export interface LogEntry {
   level: 'debug' | 'info' | 'warn' | 'error';
   scope: string;
@@ -209,19 +181,13 @@ export interface StudioAPI {
   spy: SpyAPI;
 }
 
-// =============================================================================
-// IPC Channel Names (for type-safe handler registration)
-// =============================================================================
-
 export const IPC_CHANNELS = {
-  // Bridge channels
   BRIDGE_IS_READY: 'bridge:isReady',
   BRIDGE_GET_STATE: 'bridge:getState',
   BRIDGE_GET_STATUS: 'bridge:getStatus',
   BRIDGE_SEND: 'bridge:send',
   BRIDGE_EVENT: 'bridge:event',
 
-  // Engine channels
   ENGINE_PING: 'engine:ping',
   ENGINE_GET_CAPABILITIES: 'engine:getCapabilities',
   ENGINE_RUN_PROCESS: 'engine:runProcess',
@@ -231,7 +197,6 @@ export const IPC_CHANNELS = {
   ENGINE_RESUME_PROCESS: 'engine:resumeProcess',
   ENGINE_GET_ACTIVITIES: 'engine:getActivities',
 
-  // Debugger channels
   DEBUGGER_SET_BREAKPOINT: 'debugger:setBreakpoint',
   DEBUGGER_REMOVE_BREAKPOINT: 'debugger:removeBreakpoint',
   DEBUGGER_TOGGLE_BREAKPOINT: 'debugger:toggleBreakpoint',
@@ -243,15 +208,12 @@ export const IPC_CHANNELS = {
   DEBUGGER_GET_VARIABLES: 'debugger:getVariables',
   DEBUGGER_GET_CALL_STACK: 'debugger:getCallStack',
 
-  // Dialog channels
   DIALOG_SHOW_OPEN: 'dialog:showOpen',
   DIALOG_SHOW_SAVE: 'dialog:showSave',
 
-  // Editor channels
   EDITOR_FORMAT_CODE: 'editor:formatCode',
   EDITOR_VALIDATE_CODE: 'editor:validateCode',
 
-  // FileSystem channels
   FS_SET_PROJECT_ROOT: 'fs:setProjectRoot',
   FS_PATH_EXISTS: 'fs:pathExists',
   FS_READ_DIR: 'fs:readDir',
@@ -268,7 +230,6 @@ export const IPC_CHANNELS = {
   FS_UNWATCH_DIR: 'fs:unwatchDir',
   FS_EVENT: 'fs:event',
 
-  // Log channels
   LOG_WRITE: 'log:write',
   LOG_GET: 'log:get',
   LOG_EXPORT: 'log:export',
@@ -280,19 +241,11 @@ export const IPC_CHANNELS = {
 // Type for IPC channel names
 export type IPCChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];
 
-// =============================================================================
-// Augment global Window interface
-// =============================================================================
-
 declare global {
   interface Window {
     rpaforge?: StudioAPI;
   }
 }
-
-// =============================================================================
-// Inspector API
-// =============================================================================
 
 export interface PageElement {
   tag: string;

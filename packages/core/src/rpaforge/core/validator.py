@@ -84,7 +84,6 @@ class ValidationResult:
         return "\n".join(lines)
 
 
-# Valid block types and their allowed outgoing connections
 VALID_BLOCK_TYPES = {
     "start",
     "end",
@@ -97,16 +96,13 @@ VALID_BLOCK_TYPES = {
     "subdiagram",
 }
 
-# Valid edge handle types for specific block types
 HANDLE_TYPES = {
     "if": ["true", "false"],
     "try-catch": ["output", "error"],
 }
 
-# Blocks that can have multiple outgoing edges
 MULTI_SUCCESSOR_BLOCKS = {"if", "try-catch"}
 
-# Blocks that create loop/re-entry points
 LOOP_BLOCKS = {"while", "for-each"}
 
 

@@ -5,7 +5,6 @@
  * Uses ajv for runtime validation.
  */
 
-// Base schema structure
 interface SchemaDefinition {
   $schema: string;
   $id: string;
@@ -15,9 +14,7 @@ interface SchemaDefinition {
   additionalProperties?: boolean;
 }
 
-// IPC Method Schemas
 const schemas: Record<string, SchemaDefinition> = {
-  // Bridge API schemas
   'bridge:send': {
     $schema: 'http://json-schema.org/draft-07/schema#',
     $id: 'bridge:send',
@@ -37,7 +34,6 @@ const schemas: Record<string, SchemaDefinition> = {
     additionalProperties: false,
   },
 
-  // Engine API schemas
   'engine:runProcess': {
     $schema: 'http://json-schema.org/draft-07/schema#',
     $id: 'engine:runProcess',
@@ -45,7 +41,7 @@ const schemas: Record<string, SchemaDefinition> = {
     properties: {
       source: {
         type: 'string',
-        maxLength: 1048576, // 1MB limit
+        maxLength: 1048576,
       },
       name: {
         type: 'string',
@@ -121,7 +117,6 @@ const schemas: Record<string, SchemaDefinition> = {
     additionalProperties: false,
   },
 
-  // Debugger API schemas
   'debugger:setBreakpoint': {
     $schema: 'http://json-schema.org/draft-07/schema#',
     $id: 'debugger:setBreakpoint',
@@ -239,7 +234,6 @@ const schemas: Record<string, SchemaDefinition> = {
     additionalProperties: false,
   },
 
-  // File System API schemas
   'fs:pathExists': {
     $schema: 'http://json-schema.org/draft-07/schema#',
     $id: 'fs:pathExists',
@@ -297,7 +291,7 @@ const schemas: Record<string, SchemaDefinition> = {
       },
       content: {
         type: 'string',
-        maxLength: 1048576, // 1MB limit
+        maxLength: 1048576,
       },
     },
     required: ['filePath', 'content'],

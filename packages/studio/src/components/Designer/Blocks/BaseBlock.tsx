@@ -29,7 +29,7 @@ const HEADER_HEIGHT = 34;
 const PORT_LABELS_AREA = 20;
 const MIN_CONTENT_HEIGHT = 50;
 const BASE_MIN_WIDTH = 200;
-const MIN_PORT_SPACING = 40; // px between port centers at minimum
+const MIN_PORT_SPACING = 40;
 
 function getHandleColor(port: Port): string {
   switch (port.type) {
@@ -113,7 +113,6 @@ function BaseBlockComponent({
         </div>
       )}
 
-      {/* Header */}
       <div
         className="flex items-center gap-2 rounded-t-xl px-3"
         style={{ backgroundColor: colors.primary, height: HEADER_HEIGHT }}
@@ -122,7 +121,6 @@ function BaseBlockComponent({
         <span className="truncate text-sm font-semibold text-white">{resolvedTitle}</span>
       </div>
 
-      {/* Input labels row (only when multiple inputs) */}
       {showPorts && hasInputLabels && (
         <div
           className="absolute top-0 left-0 right-0 flex"
@@ -144,7 +142,6 @@ function BaseBlockComponent({
         </div>
       )}
 
-      {/* Content area */}
       <div
         className="relative px-3 py-2 text-sm text-gray-600 flex items-center justify-center overflow-hidden"
         style={{ height: contentHeight }}
@@ -152,7 +149,6 @@ function BaseBlockComponent({
         {children || <div className="italic text-gray-400 text-xs">Configure...</div>}
       </div>
 
-      {/* Output labels row at bottom */}
       {showPorts && hasOutputLabels && (
         <div
           className="absolute bottom-0 left-0 right-0 flex"
@@ -174,7 +170,6 @@ function BaseBlockComponent({
         </div>
       )}
 
-      {/* Handles */}
       {showPorts && (
         <>
           {resolvedPortConfig.inputs.map((port, index) => {

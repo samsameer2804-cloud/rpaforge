@@ -109,7 +109,7 @@ class BridgeServer:
         try:
             await self._read_loop()
         except asyncio.CancelledError:
-            pass  # Expected during shutdown - no cleanup needed
+            pass
         finally:
             self._teardown_logging()
             self._running = False

@@ -6,7 +6,6 @@ import { isIfBlock } from '../../../types/blocks';
 
 const WIDTH = 200;
 const HEIGHT = 100;
-// Flat hexagon: angled left/right sides, flat top/bottom
 const HEX_CLIP = 'polygon(22px 0%, calc(100% - 22px) 0%, 100% 50%, calc(100% - 22px) 100%, 22px 100%, 0% 50%)';
 
 function IfBlockComponent({ data, selected }: NodeProps<ProcessNodeData>) {
@@ -17,7 +16,6 @@ function IfBlockComponent({ data, selected }: NodeProps<ProcessNodeData>) {
 
   return (
     <div className="relative" style={{ width: WIDTH, height: HEIGHT }}>
-      {/* Hexagonal visual layer */}
       <div
         className="absolute inset-0"
         style={{
@@ -27,7 +25,6 @@ function IfBlockComponent({ data, selected }: NodeProps<ProcessNodeData>) {
             : 'drop-shadow(0 4px 8px rgba(0,0,0,0.13))',
         }}
       >
-        {/* Header */}
         <div
           className="flex items-center gap-2 px-6"
           style={{ backgroundColor: '#D97706', height: 34 }}
@@ -35,14 +32,12 @@ function IfBlockComponent({ data, selected }: NodeProps<ProcessNodeData>) {
           <span className="text-base leading-none select-none">◆</span>
           <span className="text-sm font-bold text-white tracking-wide select-none">If</span>
         </div>
-        {/* Body */}
         <div
           className="flex items-center justify-center px-8 text-center"
           style={{ backgroundColor: '#FFFBEB', height: HEIGHT - 34 - 18 }}
         >
           <span className="text-[10px] text-amber-800 truncate w-full">{condition}</span>
         </div>
-        {/* Port labels row */}
         <div
           className="flex items-center"
           style={{ backgroundColor: '#FFFBEB', height: 18 }}
@@ -62,7 +57,6 @@ function IfBlockComponent({ data, selected }: NodeProps<ProcessNodeData>) {
         </div>
       </div>
 
-      {/* Handles — on outer div so they're not clipped */}
       <Handle
         type="target"
         position={Position.Top}
