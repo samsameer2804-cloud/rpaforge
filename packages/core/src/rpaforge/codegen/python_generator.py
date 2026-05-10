@@ -6,13 +6,80 @@ Converts visual diagram JSON to native Python code.
 
 from __future__ import annotations
 
+import keyword
 import re
 from typing import Any
 
+MAX_STRING_LENGTH = 10240
+MAX_FILE_PATH_LENGTH = 4096
+MAX_EXPRESSION_LENGTH = 1024
+MAX_VARIABLE_NAME_LENGTH = 100
+MAX_DIAGRAM_NODES = 10000
+
 
 def _sanitize_string(s: str) -> str:
-    """Remove invalid UTF-16 surrogate characters."""
-    return re.sub(r"[\ud800-\udfff]", "", s)
+    """Sanitize string for safe Python code generation.
+    
+    This function prevents code injection by:
+    - Removing invalid UTF-16 surrogate characters
+    - Limiting string length to prevent memory exhaustion
+    - Escaping special characters that could break Python syntax
+    - Checking for unicode control characters
+    
+    Args:
+        s: Input string to sanitize
+        
+    Returns:
+        Sanitized string safe for code generation
+        
+    Raises:
+        ValueError: If string contains invalid characters or exceeds length limits
+    """
+    if not isinstance(s, str):
+        raise TypeError(f"Expected str, got {type(s).__name__}")
+    
+    if len(s) > MAX_STRING_LENGTH:
+        raise ValueError(f"String length ({len(s)}) exceeds maximum allowed ({MAX_STRING_LENGTH})")
+    
+    # Remove invalid UTF-16 surrogate characters
+    result = re.sub(r"[\ud800-\udfff]", "", s)
+    
+    # Check for unicode control characters (except standard whitespace)
+    for char in result:
+        code = ord(char)
+        if code < 32 and char not in '\t\n\r':
+            raise ValueError(f"Control character U+{code:04X} not allowed in string")
+        if 127 <= code < 160:
+            raise ValueError(f"C1 control character U+{code:04X} not allowed in string")
+    
+    # Escape backslashes first, then quotes
+    result = result.replace('\\', '\\\\')
+    result = result.replace('"', '\\"')
+    result = result.replace("'", "\\'")
+    
+    return result
+
+
+def _validate_variable_name(name: str) -> None:
+    """Validate variable name against Python reserved keywords.
+    
+    Args:
+        name: Variable name to validate
+        
+    Raises:
+        ValueError: If name is a Python reserved keyword or too long
+    """
+    if len(name) > MAX_VARIABLE_NAME_LENGTH:
+        raise ValueError(f"Variable name length ({len(name)}) exceeds maximum ({MAX_VARIABLE_NAME_LENGTH})")
+    
+    if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', name):
+        raise ValueError(f"Invalid variable name format: {name}")
+    
+    if keyword.iskeyword(name):
+        raise ValueError(f"Variable name '{name}' is a Python reserved keyword")
+    
+    if keyword.iskeyword(name.lower()):
+        raise ValueError(f"Variable name '{name}' matches Python reserved keyword (case-insensitive)")
 
 
 class DiagramValidationError(Exception):
@@ -28,7 +95,17 @@ class DiagramValidationError(Exception):
 
 
 class PythonCodeGenerator:
-    """Converts visual diagram JSON to native Python code."""
+    """Converts visual diagram JSON to native Python code.
+    
+    Attributes:
+        _indent: Indentation string (4 spaces)
+        _libraries: Set of used library names
+        _variables: Mapping of variable names to values
+        _sourcemap: Line number to source mapping
+        _node_lines: List of (node_id, [line_strings]) for code generation
+        _diagram_metadata_by_id: Metadata by node ID
+        _sub_diagram_imports: Set of sub-diagram import names
+    """
 
     def __init__(self):
         self._indent = "    "
