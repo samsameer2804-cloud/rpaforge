@@ -1,8 +1,13 @@
 from __future__ import annotations
 
 import ast
+import keyword
 import operator
 from typing import Any
+
+MAX_STRING_LENGTH = 10240
+MAX_LIST_LENGTH = 1000
+MAX_NESTING_DEPTH = 10
 
 SAFE_OPERATORS = {
     ast.Add: operator.add,
@@ -81,16 +86,39 @@ SAFE_METHODS = frozenset(
 
 
 class SafeEvaluator(ast.NodeVisitor):
+    """AST-based safe expression evaluator.
+
+    This evaluator uses AST parsing to execute expressions safely without
+    exposing Python's eval() function directly to user input.
+
+    Args:
+        variables: Dictionary of variable name to value mappings
+    """
+
     def __init__(self, variables: dict[str, Any]):
         self.variables = variables
 
+    def _get_nesting_depth(self, node: ast.AST, current_depth: int = 0) -> int:
+        """Calculate maximum nesting depth of an AST node."""
+        max_depth = current_depth
+        for child in ast.iter_child_nodes(node):
+            child_depth = self._get_nesting_depth(child, current_depth + 1)
+            max_depth = max(max_depth, child_depth)
+        return max_depth
+
     def visit_Expr(self, node: ast.Expr) -> Any:
+        if self._get_nesting_depth(node) > MAX_NESTING_DEPTH:
+            raise ValueError(
+                f"Expression nesting depth exceeds maximum ({MAX_NESTING_DEPTH})"
+            )
         return self.visit(node.value)
 
     def visit_Constant(self, node: ast.Constant) -> Any:
         return node.value
 
     def visit_List(self, node: ast.List) -> Any:
+        if len(node.elts) > MAX_LIST_LENGTH:
+            raise ValueError(f"List exceeds maximum length ({MAX_LIST_LENGTH})")
         return [self.visit(e) for e in node.elts]
 
     def visit_Tuple(self, node: ast.Tuple) -> tuple[Any, ...]:
@@ -107,6 +135,8 @@ class SafeEvaluator(ast.NodeVisitor):
             return self.variables[node.id]
         elif node.id in SAFE_BUILTINS:
             return SAFE_BUILTINS[node.id]
+        elif keyword.iskeyword(node.id):
+            raise NameError(f"'{node.id}' is a Python reserved keyword")
         else:
             raise NameError(f"Undefined variable: {node.id}")
 
@@ -202,9 +232,31 @@ class SafeEvaluator(ast.NodeVisitor):
         raise ValueError(f"Unsupported expression: {type(node).__name__}")
 
 
-def safe_eval(condition: str, variables: dict[str, Any]) -> bool:
+def safe_eval(
+    condition: str, variables: dict[str, Any], max_length: int = MAX_STRING_LENGTH
+) -> bool:
+    """
+    Safely evaluate a Python expression using AST parsing.
+
+    Args:
+        condition: Expression string to evaluate
+        variables: Dictionary of variable name to value mappings
+        max_length: Maximum allowed string length
+
+    Returns:
+        Boolean result of the evaluated condition
+
+    Raises:
+        SyntaxError: If the expression has invalid syntax
+        NameError: If an undefined variable is referenced
+        ValueError: If expression contains unsupported operations or is too long
+    """
     if not condition or not condition.strip():
         return False
+    if len(condition) > max_length:
+        raise ValueError(
+            f"Expression length ({len(condition)}) exceeds maximum ({max_length})"
+        )
     try:
         tree = ast.parse(condition, mode="eval")
         evaluator = SafeEvaluator(variables)
@@ -221,6 +273,12 @@ def safe_eval(condition: str, variables: dict[str, Any]) -> bool:
 
 
 class ConditionParser:
+    """Parser for evaluating conditions with safe expression evaluation.
+
+    Args:
+        variables: Dictionary of variable name to value mappings
+    """
+
     def __init__(self, variables: dict[str, Any]):
         self.variables = variables
 
