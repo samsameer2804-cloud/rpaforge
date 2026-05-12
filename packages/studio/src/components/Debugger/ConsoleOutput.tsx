@@ -15,7 +15,7 @@ import { useConsoleStore, type LogEntry } from '../../stores/consoleStore';
 import type { LogLevel } from '../../types/events';
 import { config } from '../../config/app.config';
 
-const LOG_FILE_PATH = config.logging?.file || '~/.rpaforge/logs/app.log';
+const LOG_FILE_PATH = 'logs/console.log';
 
 interface ErrorSuggestion {
   causes: string[];
@@ -156,45 +156,7 @@ interface ErrorSuggestion {
   fix: string;
 }
 
-const errorSuggestions: Record<string, ErrorSuggestion> = {
-  'Element not found': {
-    causes: [
-      'Element not loaded yet (add Wait before)',
-      'Wrong selector (check element ID)',
-      'Element in different frame/tab',
-    ],
-    fix: 'Add "Wait For Element" before this activity to ensure page is loaded.',
-  },
-  'Timeout': {
-    causes: [
-      'Page load too slow',
-      'Network latency',
-      'Element never appeared',
-    ],
-    fix: 'Increase timeout value or add explicit wait conditions.',
-  },
-  'Connection refused': {
-    causes: [
-      'Application not running',
-      'Wrong port or address',
-    ],
-    fix: 'Check that the target application is running and accessible.',
-  },
-  'Permission denied': {
-    causes: [
-      'Insufficient privileges',
-      'File locked by another process',
-    ],
-    fix: 'Run the process with appropriate permissions or close conflicting applications.',
-  },
-  'File not found': {
-    causes: [
-      'Path does not exist',
-      'Relative path resolved incorrectly',
-    ],
-    fix: 'Use absolute paths and verify the file exists before running.',
-  },
-};
+
 
 function matchSuggestion(message: string): ErrorSuggestion | null {
   for (const [key, suggestion] of Object.entries(errorSuggestions)) {
