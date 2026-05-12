@@ -527,6 +527,7 @@ const ProcessCanvasInner: React.FC = () => {
     <div 
       ref={reactFlowWrapper} 
       className="relative flex-1 h-full"
+      data-tour="workflow-canvas"
       role="application"
       aria-label="Process diagram editor. Use Ctrl+Space to add activity, arrow keys to navigate nodes, Delete to remove."
     >
