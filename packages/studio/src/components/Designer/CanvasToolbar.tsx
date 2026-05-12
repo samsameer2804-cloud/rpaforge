@@ -30,10 +30,41 @@ interface CanvasToolbarProps {
   onRedo: () => void;
 }
 
-const EDGE_TYPE_OPTIONS: { type: EdgeTypeOption; label: string; description: string }[] = [
-  { type: 'auto-route', label: 'Auto', description: 'Smart orthogonal routing' },
-  { type: 'smoothstep', label: 'Rounded', description: 'Lines with rounded corners' },
-  { type: 'step', label: 'Sharp', description: 'Lines with right-angle corners' },
+const EDGE_TYPE_OPTIONS: {
+  type: EdgeTypeOption;
+  label: string;
+  description: string;
+}[] = [
+  {
+    type: 'auto-route',
+    label: 'Auto',
+    description: 'Smart orthogonal routing',
+  },
+  {
+    type: 'smoothstep',
+    label: 'Rounded',
+    description: 'Smooth curved lines',
+  },
+  {
+    type: 'step',
+    label: 'Step',
+    description: 'Sharp right-angle lines',
+  },
+  {
+    type: 'straight',
+    label: 'Straight',
+    description: 'Direct straight connection',
+  },
+  {
+    type: 'default',
+    label: 'Bezier',
+    description: 'Default React Flow curve',
+  },
+  {
+    type: 'bendable',
+    label: 'Bendable',
+    description: 'Editable bendable connection',
+  },
 ];
 
 const BLOCK_LEGEND = [
@@ -358,8 +389,14 @@ const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
             title="Line style"
             aria-label="Line style"
           >
-            {edgeType === 'step' ? <FaMinus className="w-4 h-4" /> : <FaLongArrowAltRight className="w-4 h-4" />}
-            <span className="text-xs font-medium hidden lg:inline">{currentEdgeType.label}</span>
+            {edgeType === 'step' ? (
+              <FaMinus className="w-4 h-4" />
+            ) : edgeType === 'straight' ? (
+              <FiAlignJustify className="w-4 h-4" />
+            ) : (
+              <FaLongArrowAltRight className="w-4 h-4" />
+            )}
+            <span className="text-xs font-semibold hidden lg:inline">{currentEdgeType.label}</span>
           </button>
 
           {showEdgeMenu && (
@@ -375,9 +412,17 @@ const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
                     edgeType === option.type ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700'
                   }`}
                 >
-                  <span className={`w-2 h-0.5 rounded ${
-                    option.type === 'step' ? 'bg-slate-600' : 'bg-indigo-500'
-                  }`} />
+                  <span
+                    className={`rounded ${
+                      option.type === 'step'
+                        ? 'w-3 h-0.5 bg-slate-600'
+                        : option.type === 'straight'
+                        ? 'w-3 h-0.5 bg-emerald-500'
+                        : option.type === 'bendable'
+                        ? 'w-3 h-0.5 bg-pink-500'
+                        : 'w-3 h-0.5 bg-indigo-500'
+                    }`}
+                  />
                   <div>
                     <div className="text-sm font-medium">{option.label}</div>
                     <div className="text-xs text-slate-500">{option.description}</div>
