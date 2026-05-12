@@ -398,7 +398,9 @@ const ActivityPalette: React.FC = () => {
   }, [searchQuery, categories]);
 
   return (
-    <div className="h-full flex flex-col">
+    <div 
+      className="h-full flex flex-col"
+      data-tour="activity-palette">
       <div className="p-2 border-b border-slate-200 dark:border-slate-700">
         <h2 className="font-semibold mb-2 text-slate-700">Blocks & Activities</h2>
         <div className="relative">
